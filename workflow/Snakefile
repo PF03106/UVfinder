@@ -1,0 +1,17 @@
+import pandas as pd
+
+# 1. Read sample.tsv file
+# index_col="sample_id"
+samples_df = pd.read_csv("config/samples.tsv", sep="\t").set_index("sample_id", drop=False)
+
+# 2. create a list of sample IDs
+SAMPLES = samples_df["sample_id"].tolist()
+
+# 3. Define the final target rule
+rule all:
+    input:
+        expand("results/00_renamed/{s}_renamed.fasta", s=SAMPLES),
+        expand("results/00_renamed/{s}_mapping.tsv", s=SAMPLES)
+
+# 4. Include rule files
+include: "rules/preprocessing.smk"
