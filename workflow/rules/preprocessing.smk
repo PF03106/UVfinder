@@ -28,12 +28,13 @@ rule make_blast_db:
     input:
         fna = "results/00_renamed/{sample_id}_renamed.fasta"
     output:
-        db_file = "results/00_renamed/{sample_id}_renamed.fasta.nhr"
+        db_file = "results/01_blastdb/{sample_id}_renamed.nhr"
     params:
-        db_name = "results/00_renamed/{sample_id}_renamed.fasta"
+        db_prefix = "results/01_blastdb/{sample_id}_renamed"
     log:
         "logs/blastdb/{sample_id}.log"
     shell:
         """
-        makeblastdb -in {input.fna} -dbtype nucl -out {params.db_name} > {log} 2>&1
+        mkdir -p results/01_blastdb
+        makeblastdb -in {input.fna} -dbtype nucl -out {params.db_prefix} > {log} 2>&1
         """
