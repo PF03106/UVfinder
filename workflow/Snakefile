@@ -1,17 +1,20 @@
 import pandas as pd
 
-# 1. Read sample.tsv file
-# index_col="sample_id"
+# 1. read config/samples.tsv
 samples_df = pd.read_csv("config/samples.tsv", sep="\t").set_index("sample_id", drop=False)
 
-# 2. create a list of sample IDs
+# 2. make sample_id list
 SAMPLES = samples_df["sample_id"].tolist()
 
-# 3. Define the final target rule
+# 3. rull all
 rule all:
     input:
+        # Phase 1.1: renamed files
         expand("results/00_renamed/{s}_renamed.fasta", s=SAMPLES),
-        expand("results/00_renamed/{s}_mapping.tsv", s=SAMPLES)
+        # Phase 1.1: rename mapping files
+        expand("results/00_renamed/{s}_mapping.tsv", s=SAMPLES),
+        # Phase 1.2: results for BLAST DB
+        expand("results/00_renamed/{s}_renamed.fasta.nhr", s=SAMPLES)
 
-# 4. Include rule files
+
 include: "rules/preprocessing.smk"

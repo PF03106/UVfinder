@@ -24,3 +24,16 @@ rule rename_fasta:
             {params.genus} \
             {params.species} > {log} 2>&1
         """
+rule make_blast_db:
+    input:
+        fna = "results/00_renamed/{sample_id}_renamed.fasta"
+    output:
+        db_file = "results/00_renamed/{sample_id}_renamed.fasta.nhr"
+    params:
+        db_name = "results/00_renamed/{sample_id}_renamed.fasta"
+    log:
+        "logs/blastdb/{sample_id}.log"
+    shell:
+        """
+        makeblastdb -in {input.fna} -dbtype nucl -out {params.db_name} > {log} 2>&1
+        """
