@@ -2,7 +2,7 @@
 
 rule rename_fasta:
     input:
-        fasta = "resources/genomes/{sample_id}.fasta"
+        fasta = lambda wildcards: f"resources/genomes/{samples_df.loc[wildcards.sample_id, 'genome_filename']}"
     output:
         fasta = "results/00_renamed/{sample_id}_renamed.fasta",
         map = "results/00_renamed/{sample_id}_mapping.tsv"
