@@ -1,5 +1,7 @@
 import pandas as pd
 
+configfile: "config/config.yaml"
+
 # 1. read config/samples.tsv
 samples_df = pd.read_csv("config/samples.tsv", sep="\t").set_index("sample_id", drop=False)
 
@@ -14,7 +16,10 @@ rule all:
         # Phase 1.1: rename mapping files
         expand("results/00_renamed/{s}_mapping.tsv", s=SAMPLES),
         # Phase 1.2: results for BLAST DB
-        expand("results/01_blastdb/{s}_renamed.nhr", s=SAMPLES)
+        expand("results/01_blastdb/{s}_renamed.nhr", s=SAMPLES),
+        # Phase 2.1: blast sex markers and ID the renamed genomes
+        expand("results/02_sex_id/{s}_sex_assignment.tsv", s=SAMPLES)
 
 
 include: "rules/preprocessing.smk"
+include: "rules/sex_id.smk"

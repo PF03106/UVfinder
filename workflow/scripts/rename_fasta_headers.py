@@ -11,18 +11,18 @@ def clean_original_id(header_line):
     # Remove '>' and leading/trailing whitespaces
     full_header = header_line.strip()[1:]
     
-    # 1. Try to find Chromosome patterns (e.g., Chromosome 1, Chr_02, LG1)
-    chrom_match = re.search(r'chromosome\s*:?\s*([0-9]+)', full_header, re.IGNORECASE) \
-               or re.search(r'chromosome([0-9]+)', full_header, re.IGNORECASE) \
-               or re.search(r'chr[ _-]?([0-9]+)', full_header, re.IGNORECASE) \
+    # 1. Try to find Chromosome patterns (e.g., Chromosome 1, chromosomeU, Chr_02, LG1)
+    chrom_match = re.search(r'chromosome\s*:?\s*([A-Za-z0-9]+)', full_header, re.IGNORECASE) \
+               or re.search(r'chromosome([A-Za-z0-9]+)', full_header, re.IGNORECASE) \
+               or re.search(r'chr[ _-]?([A-Za-z0-9]+)', full_header, re.IGNORECASE) \
                or re.search(r'LG([A-Za-z0-9]+)', full_header, re.IGNORECASE)
     
     if chrom_match:
         return f"Chr{chrom_match.group(1)}"
 
     # 2. Try to find Scaffold patterns (e.g., scaffold_69, Scaffold10, scaffold 14)
-    scaff_match = re.search(r'scaffold[ _-]?([0-9]+)', full_header, re.IGNORECASE) \
-               or re.search(r'scaffold\s*([0-9]+)', full_header, re.IGNORECASE)
+    scaff_match = re.search(r'scaffold[ _-]?([A-Za-z0-9]+)', full_header, re.IGNORECASE) \
+               or re.search(r'scaffold\s*([A-Za-z0-9]+)', full_header, re.IGNORECASE)
     
     if scaff_match:
         # Standardize to 'Scaffold' + Number
