@@ -1,35 +1,46 @@
-import sys
 import os
+import argparse
+from Bio import SeqIO
 
-# Snakemake 객체를 통해 입력과 출력을 받아옵니다.
-input_files = snakemake.input.fasta_files
-output_file = snakemake.output.locus_list
-
-interesting_loci = set()
-
-try:
-    for f in input_files:
-        with open(f, 'r') as file:
-            for line in file:
-                if line.startswith(">"):
-                    # 헤더 예시: >S0035_bryales_Anomobryum_..._G4471_U
-                    parts = line.strip().split("_")
-                    
-                    # 설계하신 로직: 끝에서 두 번째가 Locus ID, 마지막이 성별 태그
-                    locus_id = parts[-2]
-                    sex_tag = parts[-1]
-
-                    # U 또는 V 태그가 하나라도 있으면 선별
-                    if sex_tag.upper() in ["U", "V"]:
+def select_all_sex_linked_loci(input_dirs, output_file):
+    """
+    Scans all provided directories and lists every locus that has
+    at least one sequence tagged with _U or _V.
+    """
+    interesting_loci = set()
+    
+    for sample_dir in input_dirs:
+        if not os.path.exists(sample_dir):
+            continue
+            
+        # B_Best 폴더 내의 각 유전자 파일을 전수 조사합니다
+        for fasta_name in os.listdir(sample_dir):
+            if not fasta_name.endswith(".fasta"):
+                continue
+            
+            locus_id = fasta_name.replace(".fasta", "")
+            file_path = os.path.join(sample_dir, fasta_name)
+            
+            try:
+                for record in SeqIO.parse(file_path, "fasta"):
+                    # 헤더에서 정확히 _U 또는 _V가 포함되어 있는지 확인합니다
+                    if "_U" in record.id or "_V" in record.id:
                         interesting_loci.add(locus_id)
+                        break # 이 로커스는 이미 대상에 포함되었으므로 다음 파일로 이동
+            except Exception as e:
+                print(f"Error parsing {file_path}: {e}")
 
-    # 결과 저장
-    with open(output_file, 'w') as out:
+    # 추출된 로커스 ID를 알파벳 순으로 정렬하여 저장합니다
+    with open(output_file, "w") as f:
         for locus in sorted(list(interesting_loci)):
-            out.write(f"{locus}\n")
+            f.write(f"{locus}\n")
+            
+    print(f"✅ Census complete. {len(interesting_loci)} unique loci identified with sex-linked signals.")
 
-except Exception as e:
-    # 에러 발생 시 로그에 기록 (선택 사항)
-    with open(snakemake.log[0], "w") as log_file:
-        log_file.write(str(e))
-    sys.exit(1)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Census of all sex-linked loci across samples.")
+    parser.add_argument("--input_dirs", nargs="+", required=True, help="Directories of B_Best hits")
+    parser.add_argument("--output", required=True, help="Output list of locus IDs")
+    
+    args = parser.parse_args()
+    select_all_sex_linked_loci(args.input_dirs, args.output)
