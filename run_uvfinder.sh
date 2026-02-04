@@ -5,7 +5,7 @@
 #SBATCH --nodes=1                     # Use 1 node
 #SBATCH --ntasks=1                    # Run a single task
 #SBATCH --cpus-per-task=4             # Number of CPU cores
-#SBATCH --mem=10gb                     # Job memory
+#SBATCH --mem=20gb                     # Job memory
 #SBATCH --time=96:00:00               # Time limit hrs:min:sec
 #SBATCH --output=logs/phase3_%j.out    # Standard output and error log
 #SBATCH --account=zoo4926
@@ -22,4 +22,5 @@ conda activate /home/seyeonkim/miniconda3/envs/uvfinder
 # 3. Run Snakemake
 # --cores 4 should match cpus-per-task above
 #snakemake --cores 4
-snakemake --cores 4 -p --latency-wait 120 --keep-going
+snakemake --unlock
+snakemake --cores 16 -p --latency-wait 120 --keep-going
