@@ -1,13 +1,15 @@
 #!/bin/bash
-#SBATCH --job-name=UVfinder   # Job name
-#SBATCH --mail-type=END,FAIL          # Email notifications
+#SBATCH --job-name=UVfinder           # Job name
+#SBATCH --mail-type=ALL               # Email notifications
 #SBATCH --mail-user=seyeonkim@ufl.edu # Replace with your email
 #SBATCH --nodes=1                     # Use 1 node
 #SBATCH --ntasks=1                    # Run a single task
 #SBATCH --cpus-per-task=4             # Number of CPU cores
 #SBATCH --mem=10gb                     # Job memory
 #SBATCH --time=96:00:00               # Time limit hrs:min:sec
-#SBATCH --output=logs/sex_markers_%j.out    # Standard output and error log
+#SBATCH --output=logs/phase3_%j.out    # Standard output and error log
+#SBATCH --account=zoo4926
+#SBATCH --qos=zoo4926-b
 
 # 1. Load Conda/Mamba
 module load conda
