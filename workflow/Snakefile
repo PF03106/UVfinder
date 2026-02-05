@@ -24,10 +24,13 @@ rule all:
         expand("results/03_locus_search/{s}/B_Best", s=SAMPLES),
         # Phase 4: select loci that are sex linked and qc
         "results/04_filtered/interesting_loci.txt",
-        "results/04_filtered/collected_loci"
+        "results/04_filtered/collected_loci",
+        # Phase 5: Align AA seqs (Order)
+        "results/05_alignment/merged_with_ref"
 
 
 include: "rules/preprocessing.smk"
 include: "rules/sex_id.smk"
 include: "rules/goflag_blast_locus_search.smk"
 include: "rules/filtering_loci.smk"
+include: "rules/alignment.smk"

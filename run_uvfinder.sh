@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=4             # Number of CPU cores
 #SBATCH --mem=20gb                     # Job memory
 #SBATCH --time=96:00:00               # Time limit hrs:min:sec
-#SBATCH --output=logs/Phase4_%j.out    # Standard output and error log
+#SBATCH --output=logs/Phase5_%j.out    # Standard output and error log
 #SBATCH --account=zoo4926
 #SBATCH --qos=zoo4926-b
 
