@@ -4,7 +4,7 @@ import glob
 from Bio import SeqIO
 
 def get_best_translation(dna_seq):
-    """ (이전과 동일) 3 frame 번역 중 가장 좋은 것을 선택 """
+    """ Select the best 3frame aa translation """
     best_aa = None
     min_stops = float('inf')
     best_len = 0

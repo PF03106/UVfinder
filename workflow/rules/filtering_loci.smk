@@ -1,8 +1,8 @@
 # Phase 4: Locus Filtering & Collection (No QC)
 
-rule select_interesting_loci:
+checkpoint select_interesting_loci:
     """
-    Step 4.1: Identify loci with any sex-linked hit (_U or _V).
+    Step 4.1: Checkpoint rule to determine dynamic outputs.
     """
     input:
         all_hits = expand("results/03_locus_search/{s}/A_all", s=SAMPLES)
@@ -15,7 +15,7 @@ rule select_interesting_loci:
             --input_dirs {input.all_hits} \
             --output {output.list}
         """
-
+        
 rule collect_interesting_loci:
     """
     Step 4.2: Collect all sequences for selected loci (WITHOUT QC).

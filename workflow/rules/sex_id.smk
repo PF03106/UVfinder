@@ -1,4 +1,4 @@
-# Male 마커 전용 BLAST
+# BLAST for male markers
 rule blast_male:
     input:
         query = config["paths"]["male_markers"],
@@ -7,7 +7,7 @@ rule blast_male:
     params: db_prefix = "results/01_blastdb/{sample_id}_renamed", evalue = config["params"]["uv_blast_evalue"]
     shell: "tblastn -query {input.query} -db {params.db_prefix} -evalue {params.evalue} -outfmt '6 std qlen' -out {output}"
 
-# Female 마커 전용 BLAST
+# BLAST for female markers
 rule blast_female:
     input:
         query = config["paths"]["female_markers"],
@@ -16,7 +16,7 @@ rule blast_female:
     params: db_prefix = "results/01_blastdb/{sample_id}_renamed", evalue = config["params"]["uv_blast_evalue"]
     shell: "tblastn -query {input.query} -db {params.db_prefix} -evalue {params.evalue} -outfmt '6 std qlen' -out {output}"
 
-# 두 결과를 비교하여 성별 판정
+# ID U or V or Unknown
 rule assign_sex_differential:
     input:
         male_res = "results/02_sex_id/{sample_id}_male.tblastn",
@@ -34,3 +34,14 @@ rule assign_sex_differential:
             --min_cov {params.min_cov} \
             --min_id {params.min_id}
         """
+# Aggregate all the result from sex_sgginment.tsv
+rule aggregate_sex_id:
+    input:
+        results = expand("results/02_sex_id/{sample_id}_sex_assignment.tsv", sample_id=SAMPLES)
+    output:
+        all_res = "results/02_sex_id/all_samples_sex_assignment.tsv"
+    run:
+        import pandas as pd
+        combined_df = pd.concat([pd.read_csv(f, sep='\t') for f in input.results])
+        combined_df.to_csv(output.all_res, sep='\t', index=False)
+

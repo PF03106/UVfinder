@@ -1,145 +1,152 @@
+import os
+import re
+import argparse
 import pandas as pd
 from Bio import SeqIO
-import argparse
-import os
-import sys
+from Bio.SeqRecord import SeqRecord
 
 def load_sex_linked_map(file_path):
     """
-    sex_assign.tsv를 읽어 성염색체 번호와 성별을 매핑합니다.
-    [수정됨] Unknown도 명시적으로 맵에 등록합니다.
+    성염색체 매핑 파일(TSV) 로드
     """
     linked_map = {}
-    if not os.path.exists(file_path):
-        return linked_map
-
     try:
+        if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+            return linked_map
+
         df = pd.read_csv(file_path, sep='\t')
         for _, row in df.iterrows():
             c_id = str(row['contig_id'])
             sex = str(row['sex'])
+            if c_id.lower() == 'none': continue
             
-            if c_id.lower() == 'none':
-                continue
-                
-            # 마지막 2자리 숫자 추출 (예: tig00000014 -> 14)
-            chr_num = c_id[-2:]
+            match = re.search(r'[Cc]hr([0-9]+|[A-Za-z]+)', c_id)
+            chr_num = match.group(1) if match else c_id
             
-            # [중요] 대소문자 구분 없이 처리
             sex_lower = sex.lower()
-            
-            if sex_lower == 'u':
-                linked_map[chr_num] = 'U-linked'
-            elif sex_lower == 'v':
-                linked_map[chr_num] = 'V-linked'
-            elif sex_lower == 'unknown': 
-                linked_map[chr_num] = 'Unknown' # Unknown 상태 보존
-            # 그 외(Autosome 등)는 맵에 없으면 나중에 Default 'A'로 처리됨
-            
+            if sex_lower == 'u': linked_map[chr_num] = 'U-linked'
+            elif sex_lower == 'v': linked_map[chr_num] = 'V-linked'
+            elif sex_lower == 'unknown': linked_map[chr_num] = 'Unknown'
     except Exception as e:
         print(f"Warning parsing sex map: {e}")
-            
     return linked_map
 
-def extract_and_tag(blast_file, linked_map, genome_dict, out_dir, sample_id, mode='A'):
+def get_rank_letter(n):
+    if n < 50: return f"R{n + 1}"
+    else: return None
+
+def extract_and_tag(blast_file, linked_map, genome_dict, out_best_dir, out_all_dir, sample_id, flank_bp=20):
+    """
+    BLAST 결과를 파싱하여 유전자별로 개별 파일을 생성하여 저장
+    """
+    # 1. [매우 중요] 출력 디렉토리(폴더) 생성
+    # Snakemake는 이 폴더가 존재해야 작업 완료로 간주합니다.
+    os.makedirs(out_best_dir, exist_ok=True)
+    os.makedirs(out_all_dir, exist_ok=True)
+    
     cols = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", 
             "qstart", "qend", "sstart", "send", "evalue", "bitscore", "qlen"]
     
     if not os.path.exists(blast_file) or os.path.getsize(blast_file) == 0:
+        print(f"Warning: BLAST file not found or empty: {blast_file}")
+        # 빈 폴더만 생성되고 종료됨 (에러 아님)
         return
 
-    df = pd.read_csv(blast_file, sep='\t', names=cols)
-
-    # [Start] 추가할 디버깅 코드 -------------------------
-    print("\n--- 🔍 DEBUGGING START ---")
-    print(f"1. BLAST에서 본 컨티그 이름 (상위 3개): {df['sseqid'].head(3).tolist()}")
-    print(f"2. 게놈 파일의 컨티그 이름 (상위 3개): {list(genome_dict.keys())[:3]}")
-    
-    # 첫 번째 BLAST 결과가 게놈 사전에 있는지 테스트
-    first_hit = str(df.iloc[0]['sseqid'])
-    if first_hit in genome_dict:
-        print(f"✅ 매칭 성공! '{first_hit}'을 찾았습니다.")
-    else:
-        print(f"❌ 매칭 실패! '{first_hit}'이 게놈 사전에 없습니다.")
-        print("👉 띄어쓰기, 파이프(|), 버전 번호(.1) 등을 확인해보세요.")
-    print("--- DEBUGGING END ---\n")
-    # [End] ---------------------------------------------
-    
-    # B 모드(Best Hit)일 경우: 유전자(Locus)별로 가장 높은 점수 1개만 남김
-    if mode == 'B':
-        # G4471|... 형태에서 G4471만 임시 추출하여 중복 제거 기준(subset)으로 사용
-        df['temp_locus_id'] = df['qseqid'].apply(lambda x: x.split('|')[0] if '|' in str(x) else x)
-        df = df.sort_values('bitscore', ascending=False).drop_duplicates('temp_locus_id')
-
-    for _, row in df.iterrows():
-        raw_qseqid = str(row['qseqid'])
-        sseqid = str(row['sseqid'])
+    try:
+        df = pd.read_csv(blast_file, sep='\t', names=cols)
+        # 정렬
+        df = df.sort_values(by=['qseqid', 'evalue', 'bitscore'], ascending=[True, True, False])
         
-        # [핵심 1] Qseqid 파싱 (G4471|OriginalID -> G4471 추출)
-        if '|' in raw_qseqid:
-            locus_id = raw_qseqid.split('|')[0] # G4471
-        else:
-            locus_id = raw_qseqid # 포맷이 다르면 그대로 사용
-
-        # [핵심 2] 성염색체 태깅 (Unknown 처리 포함)
-        hit_chr_num = sseqid[-2:]
-        sex_type = linked_map.get(hit_chr_num, 'A') # 맵에 없으면 Autosome
-        
-        if sex_type == 'U-linked':
-            tag_suffix = "U"
-        elif sex_type == 'V-linked':
-            tag_suffix = "V"
-        elif sex_type == 'Unknown':
-            tag_suffix = "Unk" # Unknown은 Unk 태그 부착
-        else:
-            tag_suffix = "A"
-        
-        # [핵심 3] 최종 헤더 구성: >Sample_Locus_Tag (통합 분석용)
-        # 예: >S0035_G4471_U
-        new_header_id = f"{sample_id}_{locus_id}_{tag_suffix}"
-        
-        # 서열 추출 (역상보 보정)
-        start, end = int(row['sstart']), int(row['send'])
-        is_reverse = start > end
-        actual_start, actual_end = (end - 1, start) if is_reverse else (start - 1, end)
-        
-        if sseqid in genome_dict:
-            seq_record = genome_dict[sseqid][actual_start:actual_end]
-            if is_reverse:
-                seq_record.seq = seq_record.seq.reverse_complement()
+        # 2. Query ID(유전자) 별로 그룹화하여 처리
+        # 여기서 qseqid는 'G4471|Original_Header' 형태
+        for qseqid_raw, group in df.groupby("qseqid"):
             
-            # 레코드 정보 업데이트
-            seq_record.id = new_header_id
-            seq_record.description = f"original:{sseqid} qseqid:{raw_qseqid}"
+            # 유전자 ID 추출 (파일명으로 사용)
+            # 예: G4471|... -> G4471
+            clean_locus = qseqid_raw.split('|')[0]
             
-            # [핵심 4] 파일 저장: 유전자 이름(G4471.fasta)으로 저장
-            locus_file_path = os.path.join(out_dir, f"{locus_id}.fasta")
+            gene_records = []
             
-            with open(locus_file_path, "a") as f:
-                SeqIO.write(seq_record, f, "fasta")
+            # 해당 유전자의 히트들 처리
+            for i, (_, row) in enumerate(group.iterrows()):
+                rank = get_rank_letter(i)
+                if rank is None: continue # 50등 밖은 버림
+                
+                chrom = row['sseqid']
+                if chrom not in genome_dict: continue
+                    
+                full_seq = genome_dict[chrom].seq
+                chrom_len = len(full_seq)
+                sstart, send = int(row['sstart']), int(row['send'])
+                
+                # 좌표 및 strand 처리
+                if sstart < send:
+                    strand = 1
+                    start_pos = max(0, sstart - 1 - flank_bp)
+                    end_pos = min(chrom_len, send + flank_bp)
+                    seq_extracted = full_seq[start_pos:end_pos]
+                else:
+                    strand = -1
+                    start_pos = max(0, send - 1 - flank_bp)
+                    end_pos = min(chrom_len, sstart + flank_bp)
+                    seq_extracted = full_seq[start_pos:end_pos].reverse_complement()
+                
+                # Linkage info
+                match = re.search(r'[Cc]hr([0-9]+|[A-Za-z]+)', chrom)
+                chr_key = match.group(1) if match else chrom
+                linkage_info = linked_map.get(chr_key, "Autosomal")
+                
+                # 헤더 포맷: >S0049_G4471_R1
+                new_id = f"{sample_id}_{clean_locus}_{rank}"
+                description = f"[{linkage_info}] original:{chrom}:{sstart}-{send}({strand})"
+                
+                record = SeqRecord(seq_extracted, id=new_id, description=description)
+                gene_records.append(record)
+            
+            # 3. 파일 저장 (유전자별 개별 파일)
+            if gene_records:
+                # 파일명: G4471.fasta
+                file_name = f"{clean_locus}.fasta"
+                
+                # (1) A_all 폴더에 저장 (모든 히트)
+                out_path_all = os.path.join(out_all_dir, file_name)
+                with open(out_path_all, "w") as f_all:
+                    SeqIO.write(gene_records, f_all, "fasta")
+                
+                # (2) B_Best 폴더에 저장 (R1만 필터링)
+                best_records = [rec for rec in gene_records if rec.id.endswith('_R1')]
+                if best_records:
+                    out_path_best = os.path.join(out_best_dir, file_name)
+                    with open(out_path_best, "w") as f_best:
+                        SeqIO.write(best_records, f_best, "fasta")
 
-def main():
+        print(f"Processed BLAST results into directories: {out_all_dir}, {out_best_dir}")
+
+    except Exception as e:
+        print(f"Error processing BLAST file: {e}")
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sample", required=True, help="Sample ID (e.g., S0035)")
+    parser.add_argument("--sample", required=True)
     parser.add_argument("--blast", required=True)
     parser.add_argument("--sex_map", required=True)
     parser.add_argument("--genome", required=True)
-    parser.add_argument("--out_best", required=True) # B_Best
-    parser.add_argument("--out_all", required=True)  # A_all
+    # 인자 이름 변경: directory임을 명시
+    parser.add_argument("--out_best_dir", required=True, help="Output Directory for Best hits")
+    parser.add_argument("--out_all_dir", required=True, help="Output Directory for All hits")
+    
     args = parser.parse_args()
 
-    os.makedirs(args.out_best, exist_ok=True)
-    os.makedirs(args.out_all, exist_ok=True)
-
-    # 1. 매핑 정보 로드
-    linked_map = load_sex_linked_map(args.sex_map)
-    
-    # 2. 유전체 로드
+    print(f"Loading genome: {args.genome}...")
     genome_dict = SeqIO.to_dict(SeqIO.parse(args.genome, "fasta"))
-
-    # 3. 추출 및 태깅 실행
-    extract_and_tag(args.blast, linked_map, genome_dict, args.out_all, args.sample, mode='A')
-    extract_and_tag(args.blast, linked_map, genome_dict, args.out_best, args.sample, mode='B')
-
-if __name__ == "__main__":
-    main()
+    
+    sex_map = load_sex_linked_map(args.sex_map)
+    
+    extract_and_tag(
+        blast_file=args.blast,
+        linked_map=sex_map,
+        genome_dict=genome_dict,
+        out_best_dir=args.out_best_dir,
+        out_all_dir=args.out_all_dir,
+        sample_id=args.sample
+    )

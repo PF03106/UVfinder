@@ -10,13 +10,12 @@ def get_best_score(file_path, min_cov, min_id):
     df = pd.read_csv(file_path, sep='\t', names=cols)
     df['coverage'] = df['length'] / df['qlen']
     
-    # 필터링 적용
     filtered = df[(df['pident'] >= min_id) & (df['coverage'] >= min_cov)]
     
     if filtered.empty:
         return None, 0, 0
     
-    # Bit-score가 가장 높은 Top Hit 반환
+    # Return Top Hit which has the highest Bit-score
     best = filtered.sort_values(by='bitscore', ascending=False).iloc[0]
     return best['sseqid'], best['bitscore'], best['coverage']
 
@@ -32,7 +31,7 @@ def main():
     m_contig, m_score, m_cov = get_best_score(args.male, args.min_cov, args.min_id)
     f_contig, f_score, f_cov = get_best_score(args.female, args.min_cov, args.min_id)
 
-    # 성별 판정 로직: 더 높은 Bit-score를 가진 쪽을 선택
+    # Sex identification logic: Select higher bit-score (male vs female)
     if m_score > f_score:
         res = {'contig_id': m_contig, 'sex': 'V', 'score': m_score, 'cov': m_cov}
     elif f_score > m_score:

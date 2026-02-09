@@ -8,7 +8,22 @@ samples_df = pd.read_csv("config/samples.tsv", sep="\t").set_index("sample_id", 
 # 2. make sample_id list
 SAMPLES = samples_df["sample_id"].tolist()
 
-# 3. rull all
+def get_phylogeny_targets(wildcards):
+    """
+    체크포인트(Phase 4)가 완료될 때까지 기다렸다가,
+    생성된 interesting_loci.txt를 읽어서 최종 트리 파일 목록을 반환합니다.
+    """
+    # 1. 체크포인트의 출력 파일 가져오기 (이 시점에서 Phase 4가 강제로 실행됨)
+    checkpoint_output = checkpoints.select_interesting_loci.get(**wildcards).output.list
+    
+    # 2. 파일 읽어서 유전자 ID 리스트 만들기
+    with open(checkpoint_output) as f:
+        targets = [line.strip() for line in f if line.strip()]
+        
+    # 3. 그 유전자들에 대한 트리 파일 경로 반환
+    return expand("results/06_phylogeny/trees/Global_{locus}.treefile", locus=targets)
+
+# 4. rull all
 rule all:
     input:
         # Phase 1.1: renamed files
@@ -19,14 +34,17 @@ rule all:
         expand("results/01_blastdb/{s}_renamed.nhr", s=SAMPLES),
         # Phase 2.1: blast sex markers and ID the renamed genomes
         expand("results/02_sex_id/{s}_sex_assignment.tsv", s=SAMPLES),
+        "results/02_sex_id/all_samples_sex_assignment.tsv"
         # Phase 3: blast goflag probes and Tag "sex type" and extract All/Best Hits.
-        expand("results/03_locus_search/{s}/A_all", s=SAMPLES),
-        expand("results/03_locus_search/{s}/B_Best", s=SAMPLES),
+        #expand("results/03_locus_search/{s}/A_all", s=SAMPLES),
+        #expand("results/03_locus_search/{s}/B_Best", s=SAMPLES),
         # Phase 4: select loci that are sex linked and qc
-        "results/04_filtered/interesting_loci.txt",
-        "results/04_filtered/collected_loci",
+        #"results/04_filtered/interesting_loci.txt",
+        #"results/04_filtered/collected_loci",
         # Phase 5: Align AA seqs (Order)
-        "results/05_alignment/merged_with_ref"
+        #"results/05_alignment/merged_with_ref",
+        # Phase 6: TrimAL and IQTree
+        #get_phylogeny_targets
 
 
 include: "rules/preprocessing.smk"
@@ -34,3 +52,4 @@ include: "rules/sex_id.smk"
 include: "rules/goflag_blast_locus_search.smk"
 include: "rules/filtering_loci.smk"
 include: "rules/alignment.smk"
+include: "rules/phylogeny.smk"
