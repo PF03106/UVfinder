@@ -5,7 +5,7 @@
 #SBATCH --nodes=1                     # Use 1 node
 #SBATCH --ntasks=1                    # Run a single task
 #SBATCH --cpus-per-task=8             # Number of CPU cores
-#SBATCH --mem=2gb                     # Job memory
+#SBATCH --mem=16gb                    # Job memory (increased from 2gb to prevent OOM)
 #SBATCH --time=96:00:00               # Time limit hrs:min:sec
 #SBATCH --output=logs/RE_Phase3_%j.out     # Standard output and error log
 #SBATCH --account=mcdaniel

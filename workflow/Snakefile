@@ -41,8 +41,9 @@ rule all:
         # Phase 4: select loci that are sex linked and qc
         "results/04_filtered/all_sex_linked_genes.txt",
         "results/04_filtered/sex_linked_summary_by_order.tsv",
-        # Phase 5: Align AA seqs (Order)
-        #"results/05_alignment/merged_with_ref",
+        # Phase 5: Extract sequences
+        expand("results/05_extracted/{s}/Best", s=SAMPLES),
+        expand("results/05_extracted/{s}/All", s=SAMPLES),
         # Phase 6: TrimAL and IQTree
         #get_phylogeny_targets
 
@@ -51,5 +52,6 @@ include: "rules/preprocessing.smk"
 include: "rules/sex_id.smk"
 include: "rules/goflag_blast_locus_search.smk"
 include: "rules/filtering_loci.smk"
+include: "rules/extraction.smk"
 include: "rules/alignment.smk"
 include: "rules/phylogeny.smk"
