@@ -34,10 +34,10 @@ rule all:
         expand("results/01_blastdb/{s}_renamed.nhr", s=SAMPLES),
         # Phase 2.1: blast sex markers and ID the renamed genomes
         expand("results/02_sex_id/{s}_sex_assignment.tsv", s=SAMPLES),
-        "results/02_sex_id/all_samples_sex_assignment.tsv"
+        "results/02_sex_id/all_samples_sex_assignment.tsv",
         # Phase 3: blast goflag probes and Tag "sex type" and extract All/Best Hits.
-        #expand("results/03_locus_search/{s}/A_all", s=SAMPLES),
-        #expand("results/03_locus_search/{s}/B_Best", s=SAMPLES),
+        expand("results/03_locus_search/{s}/A_All_hits.tsv",s=SAMPLES),
+        expand("results/03_locus_search/{s}/B_Best_hits.tsv", s=SAMPLES),
         # Phase 4: select loci that are sex linked and qc
         #"results/04_filtered/interesting_loci.txt",
         #"results/04_filtered/collected_loci",

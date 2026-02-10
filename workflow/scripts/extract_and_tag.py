@@ -1,152 +1,182 @@
+import pandas as pd
+import argparse
 import os
 import re
-import argparse
-import pandas as pd
-from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord
 
-def load_sex_linked_map(file_path):
+def parse_chrom_id(header_string):
     """
-    성염색체 매핑 파일(TSV) 로드
+    Extract chromosome identifier (number or string) coming after "Chr".
+    e.g.: '...Chr1...' -> '1', '...ChrU...' -> 'U'
+    If no match found, returns the original string.
     """
-    linked_map = {}
+    match = re.search(r'Chr(.+)', str(header_string), re.IGNORECASE)
+    if match:
+        # Strip whitespace or pipes that might follow
+        return match.group(1).strip()
+    return str(header_string)
+
+def load_sex_map(file_path):
+    """
+    Load sex map TSV file into a dictionary { Chrom_ID : Sex_Tag }.
+    Sex Tag Mapping:
+      - U -> 'U'
+      - V -> 'V'
+      - Unknown -> 'N'
+      - Everything else -> 'A' (Autosome)
+    """
+    mapping = {}
+    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+        return mapping
+        
     try:
-        if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-            return linked_map
-
         df = pd.read_csv(file_path, sep='\t')
         for _, row in df.iterrows():
-            c_id = str(row['contig_id'])
-            sex = str(row['sex'])
-            if c_id.lower() == 'none': continue
+            if str(row['contig_id']).lower() == 'none': continue
             
-            match = re.search(r'[Cc]hr([0-9]+|[A-Za-z]+)', c_id)
-            chr_num = match.group(1) if match else c_id
+            # 1. Extract chromosome ID from contig_id
+            c_id = parse_chrom_id(row['contig_id'])
             
-            sex_lower = sex.lower()
-            if sex_lower == 'u': linked_map[chr_num] = 'U-linked'
-            elif sex_lower == 'v': linked_map[chr_num] = 'V-linked'
-            elif sex_lower == 'unknown': linked_map[chr_num] = 'Unknown'
+            # 2. Determine Sex Tag
+            sex_raw = str(row['sex']).lower()
+            if sex_raw == 'u': tag = 'U'
+            elif sex_raw == 'v': tag = 'V'
+            elif sex_raw == 'unknown': tag = 'N'
+            else: tag = 'A'
+            
+            mapping[c_id] = tag
+            
     except Exception as e:
-        print(f"Warning parsing sex map: {e}")
-    return linked_map
+        print(f"Warning loading sex map: {e}")
+        
+    return mapping
 
-def get_rank_letter(n):
-    if n < 50: return f"R{n + 1}"
-    else: return None
-
-def extract_and_tag(blast_file, linked_map, genome_dict, out_best_dir, out_all_dir, sample_id, flank_bp=20):
+def is_overlapping(start1, end1, start2, end2, threshold=0.5):
     """
-    BLAST 결과를 파싱하여 유전자별로 개별 파일을 생성하여 저장
+    Check if two genomic regions overlap by a certain ratio.
+    threshold: 0.5 means if they overlap by more than 50% of the shorter length, it's a duplicate.
     """
-    # 1. [매우 중요] 출력 디렉토리(폴더) 생성
-    # Snakemake는 이 폴더가 존재해야 작업 완료로 간주합니다.
-    os.makedirs(out_best_dir, exist_ok=True)
-    os.makedirs(out_all_dir, exist_ok=True)
+    # Normalize coordinates (ensure min is first) because BLAST hits can be reverse strand
+    s1, e1 = sorted([int(start1), int(end1)])
+    s2, e2 = sorted([int(start2), int(end2)])
     
+    # Calculate intersection
+    overlap_start = max(s1, s2)
+    overlap_end = min(e1, e2)
+    
+    # If no overlap exists
+    if overlap_end <= overlap_start:
+        return False
+    
+    overlap_len = overlap_end - overlap_start
+    len1 = e1 - s1
+    len2 = e2 - s2
+    
+    # Check if overlap ratio exceeds threshold for either sequence
+    if len1 > 0 and (overlap_len / len1 > threshold): return True
+    if len2 > 0 and (overlap_len / len2 > threshold): return True
+    
+    return False
+
+def partition_blast(blast_file, sex_map_file, out_best, out_all):
+    # Create output directories if they don't exist
+    os.makedirs(os.path.dirname(out_best), exist_ok=True)
+    os.makedirs(os.path.dirname(out_all), exist_ok=True)
+
+    # Standard BLAST output format 6 columns
     cols = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", 
-            "qstart", "qend", "sstart", "send", "evalue", "bitscore", "qlen"]
+            "qstart", "qend", "sstart", "send", "evalue", "bitscore"]
     
+    # Handle empty BLAST file
     if not os.path.exists(blast_file) or os.path.getsize(blast_file) == 0:
-        print(f"Warning: BLAST file not found or empty: {blast_file}")
-        # 빈 폴더만 생성되고 종료됨 (에러 아님)
+        empty_df = pd.DataFrame(columns=cols+['rank', 'sex_tag'])
+        empty_df.to_csv(out_best, sep='\t', index=False)
+        empty_df.to_csv(out_all, sep='\t', index=False)
         return
 
-    try:
-        df = pd.read_csv(blast_file, sep='\t', names=cols)
-        # 정렬
-        df = df.sort_values(by=['qseqid', 'evalue', 'bitscore'], ascending=[True, True, False])
+    # 1. Load BLAST Results
+    df = pd.read_csv(blast_file, sep='\t', names=cols, usecols=range(12))
+    
+    # 2. Pre-processing & Sorting
+    # Extract clean Locus ID (remove pipes e.g., G4471|... -> G4471)
+    df['locus_temp'] = df['qseqid'].apply(lambda x: str(x).split('|')[0])
+    
+    # Sort: Locus (A-Z) -> Evalue (Low to High) -> Bitscore (High to Low)
+    # This ensures the "Best" hit is always the first row for each locus.
+    df = df.sort_values(by=['locus_temp', 'evalue', 'bitscore'], ascending=[True, True, False])
+    
+    # 3. Load Sex Map
+    sex_map = load_sex_map(sex_map_file)
+    
+    best_rows = []
+    all_rows = [] # This will store only non-redundant hits
+    
+    # 4. Group by Locus and Filter
+    # sort=False maintains the sorting order we just applied
+    for locus, group in df.groupby('locus_temp', sort=False):
         
-        # 2. Query ID(유전자) 별로 그룹화하여 처리
-        # 여기서 qseqid는 'G4471|Original_Header' 형태
-        for qseqid_raw, group in df.groupby("qseqid"):
+        # --- Process Best Hit ---
+        # Since we sorted, the first row is the Best Hit
+        best_hit = group.iloc[0].to_dict()
+        best_chrom = parse_chrom_id(best_hit['sseqid'])
+        best_hit['sex_tag'] = sex_map.get(best_chrom, 'A')
+        best_hit['rank'] = 1
+        
+        best_rows.append(best_hit)
+        
+        # --- Process All Hits (with Overlap Filtering) ---
+        saved_regions = [] # To track regions we have already accepted
+        current_rank = 1
+        
+        for _, row in group.iterrows():
+            chrom = row['sseqid']
+            sstart, send = int(row['sstart']), int(row['send'])
             
-            # 유전자 ID 추출 (파일명으로 사용)
-            # 예: G4471|... -> G4471
-            clean_locus = qseqid_raw.split('|')[0]
+            # Check for redundancy
+            is_redundant = False
+            for saved in saved_regions:
+                saved_chrom, saved_start, saved_end = saved
+                
+                # If same chromosome AND overlaps significantly -> It is redundant
+                if chrom == saved_chrom and is_overlapping(sstart, send, saved_start, saved_end):
+                    is_redundant = True
+                    break
             
-            gene_records = []
+            # If it's a new, distinct location (Real Duplication or Best Hit)
+            if not is_redundant:
+                saved_regions.append((chrom, sstart, send))
+                
+                row_dict = row.to_dict()
+                chrom_id = parse_chrom_id(chrom)
+                row_dict['sex_tag'] = sex_map.get(chrom_id, 'A')
+                row_dict['rank'] = current_rank
+                
+                # Clean up temp column before saving
+                if 'locus_temp' in row_dict: del row_dict['locus_temp']
+                
+                all_rows.append(row_dict)
+                current_rank += 1
             
-            # 해당 유전자의 히트들 처리
-            for i, (_, row) in enumerate(group.iterrows()):
-                rank = get_rank_letter(i)
-                if rank is None: continue # 50등 밖은 버림
-                
-                chrom = row['sseqid']
-                if chrom not in genome_dict: continue
-                    
-                full_seq = genome_dict[chrom].seq
-                chrom_len = len(full_seq)
-                sstart, send = int(row['sstart']), int(row['send'])
-                
-                # 좌표 및 strand 처리
-                if sstart < send:
-                    strand = 1
-                    start_pos = max(0, sstart - 1 - flank_bp)
-                    end_pos = min(chrom_len, send + flank_bp)
-                    seq_extracted = full_seq[start_pos:end_pos]
-                else:
-                    strand = -1
-                    start_pos = max(0, send - 1 - flank_bp)
-                    end_pos = min(chrom_len, sstart + flank_bp)
-                    seq_extracted = full_seq[start_pos:end_pos].reverse_complement()
-                
-                # Linkage info
-                match = re.search(r'[Cc]hr([0-9]+|[A-Za-z]+)', chrom)
-                chr_key = match.group(1) if match else chrom
-                linkage_info = linked_map.get(chr_key, "Autosomal")
-                
-                # 헤더 포맷: >S0049_G4471_R1
-                new_id = f"{sample_id}_{clean_locus}_{rank}"
-                description = f"[{linkage_info}] original:{chrom}:{sstart}-{send}({strand})"
-                
-                record = SeqRecord(seq_extracted, id=new_id, description=description)
-                gene_records.append(record)
-            
-            # 3. 파일 저장 (유전자별 개별 파일)
-            if gene_records:
-                # 파일명: G4471.fasta
-                file_name = f"{clean_locus}.fasta"
-                
-                # (1) A_all 폴더에 저장 (모든 히트)
-                out_path_all = os.path.join(out_all_dir, file_name)
-                with open(out_path_all, "w") as f_all:
-                    SeqIO.write(gene_records, f_all, "fasta")
-                
-                # (2) B_Best 폴더에 저장 (R1만 필터링)
-                best_records = [rec for rec in gene_records if rec.id.endswith('_R1')]
-                if best_records:
-                    out_path_best = os.path.join(out_best_dir, file_name)
-                    with open(out_path_best, "w") as f_best:
-                        SeqIO.write(best_records, f_best, "fasta")
-
-        print(f"Processed BLAST results into directories: {out_all_dir}, {out_best_dir}")
-
-    except Exception as e:
-        print(f"Error processing BLAST file: {e}")
+    # 5. Save Results
+    out_cols = cols + ['rank', 'sex_tag']
+    
+    # Save Best Hits
+    if best_rows:
+        pd.DataFrame(best_rows)[out_cols].to_csv(out_best, sep='\t', index=False)
+    else:
+        pd.DataFrame(columns=out_cols).to_csv(out_best, sep='\t', index=False)
+        
+    # Save All Hits (Filtered)
+    if all_rows:
+        pd.DataFrame(all_rows)[out_cols].to_csv(out_all, sep='\t', index=False)
+    else:
+        pd.DataFrame(columns=out_cols).to_csv(out_all, sep='\t', index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sample", required=True)
-    parser.add_argument("--blast", required=True)
-    parser.add_argument("--sex_map", required=True)
-    parser.add_argument("--genome", required=True)
-    # 인자 이름 변경: directory임을 명시
-    parser.add_argument("--out_best_dir", required=True, help="Output Directory for Best hits")
-    parser.add_argument("--out_all_dir", required=True, help="Output Directory for All hits")
-    
+    parser.add_argument("--blast", required=True, help="Input BLAST result file")
+    parser.add_argument("--sex_map", required=True, help="Input Sex assignment TSV file")
+    parser.add_argument("--out_best", required=True, help="Output path for Best Hits TSV")
+    parser.add_argument("--out_all", required=True, help="Output path for All Hits TSV")
     args = parser.parse_args()
-
-    print(f"Loading genome: {args.genome}...")
-    genome_dict = SeqIO.to_dict(SeqIO.parse(args.genome, "fasta"))
     
-    sex_map = load_sex_linked_map(args.sex_map)
-    
-    extract_and_tag(
-        blast_file=args.blast,
-        linked_map=sex_map,
-        genome_dict=genome_dict,
-        out_best_dir=args.out_best_dir,
-        out_all_dir=args.out_all_dir,
-        sample_id=args.sample
-    )
+    partition_blast(args.blast, args.sex_map, args.out_best, args.out_all)

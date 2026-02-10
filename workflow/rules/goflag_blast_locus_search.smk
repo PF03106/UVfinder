@@ -1,82 +1,73 @@
-rule prepare_sample_queries:
-    """
-    Step 3.1: Extract probe sequences matching the Order.
-    """
-    input:
-        probe_dir = "resources/query_sets" 
-    output:
-        temp_fasta = temp("results/03_locus_search/{sample_id}/matched_queries.fasta")
-    run:
-        import os
-        from Bio import SeqIO
-        
-        try:
-            sample_order = samples_df.loc[wildcards.sample_id, "order"]
-        except KeyError:
-            print(f"❌ Error: Sample ID '{wildcards.sample_id}' not found.")
-            raise
+# workflow/rules/goflag_blast_locus_search.smk
 
-        order_norm = str(sample_order).lower().replace(" ", "").strip()
-        print(f"--- 🧬 Extracting GoFlag probes for {wildcards.sample_id} ---")
-        
-        count = 0
-        with open(output.temp_fasta, "w") as out_f:
-            for locus_file in os.listdir(input.probe_dir):
-                if not locus_file.endswith(".fasta"): continue
-                
-                locus_id = locus_file.split(".")[0] 
-                locus_path = os.path.join(input.probe_dir, locus_file)
-                
-                for record in SeqIO.parse(locus_path, "fasta"):
-                    if record.id.lower().startswith(f"{order_norm}_"):
-                        # 나중에 Python에서 split('|') 하기 위해 파이프로 구분
-                        record.id = f"{locus_id}|{record.id}"
-                        record.description = record.id 
-                        SeqIO.write(record, out_f, "fasta")
-                        count += 1
-        
-        if count == 0:
-            print(f"⚠️ Warning: No matching probes found for order '{order_norm}'.")
-
-rule blast_queries:
-    """
-    Step 3.2: Perform tBLASTn
-    """
+# 1. Call Python script to generate order-specific probes
+rule prepare_order_probes:
     input:
-        query = rules.prepare_sample_queries.output.temp_fasta,
-        db_index = "results/01_blastdb/{sample_id}_renamed.nhr"
+        probe_dir = "resources/query_sets", 
+        samples_tsv = "config/samples.tsv"
     output:
-        "results/03_locus_search/{sample_id}_goflag.tblastn"
-    params:
-        db_prefix = "results/01_blastdb/{sample_id}_renamed",
-        evalue = config["params"]["query_blast_evalue"]
+        # Sample-specific probe file
+        # Using temp() will automatically delete after BLAST completes to save space (optional)
+        #specific_probes = temp("resources/probes_by_sample/{s}_specific_probes.fasta")
+        specific_probes = "resources/probes_by_sample/{s}_specific_probes.fasta"
+    log: "logs/3-1/prepare_probes_{s}.log"
     shell:
         """
-        tblastn -query {input.query} \
-                -db {params.db_prefix} \
-                -evalue {params.evalue} \
-                -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen' \
-                -out {output}
+        python3 workflow/scripts/blast_by_orders.py \
+            --sample {wildcards.s} \
+            --samples_tsv {input.samples_tsv} \
+            --probe_dir {input.probe_dir} \
+            --output {output.specific_probes} \
+            > {log} 2>&1
         """
-rule filter_and_tag_hits:
+
+# 2. Run BLAST with custom probes
+rule blast_search:
+    input:
+        genome = "results/00_renamed/{s}_renamed.fasta",
+        # Input file created above
+        query = "resources/probes_by_sample/{s}_specific_probes.fasta"
+    output:
+        blast_out = "results/03_locus_search/{s}/{s}_blast_results.txt"
+    threads: 8
+    params:
+        evalue = config["params"]["query_blast_evalue"],
+        outfmt = "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore"
+    log: "logs/3-2/blast_{s}.log"
+    shell:
+        """
+        tblastn \
+            -query {input.query} \
+            -subject {input.genome} \
+            -evalue {params.evalue} \
+            -outfmt "{params.outfmt}" \
+            -num_threads {threads} \
+            -out {output.blast_out} \
+            2> {log}
+        """
+
+# 3. Partition BLAST results into All hits and Best hits. 
+rule partition_blast_results:
     """
-    Step 3.3: Parse BLAST results, tag sex-linkage, and extract sequences.
-    Output is DIRECTORIES containing individual gene files.
+    Step 3.3: Process raw BLAST results to create organized tables (TSV).
+    - Maps BLAST hits to Sex Chromosomes (U, V, Autosome, Unknown).
+    - Ranks hits by E-value (Rank 1 = Best).
+    - Splits results into 'Best' (Rank 1 only) and 'All' (All ranks).
+    * Note: This step does NOT extract sequences yet.
     """
     input:
-        blast_res = rules.blast_queries.output,
-        sex_map = "results/02_sex_id/{sample_id}_sex_assignment.tsv",
-        genome = "results/00_renamed/{sample_id}_renamed.fasta"
+        blast = "results/03_locus_search/{s}/{s}_blast_results.txt",
+        sex_map = "results/02_sex_id/{s}_sex_assignment.tsv"
     output:
-        all_hits = directory("results/03_locus_search/{sample_id}/A_all"),
-        best_hits = directory("results/03_locus_search/{sample_id}/B_Best")
+        best_tsv = "results/03_locus_search/{s}/B_Best_hits.tsv",
+        all_tsv = "results/03_locus_search/{s}/A_All_hits.tsv"
+    log: "logs/3-3/All_or_Best_partition_{s}.log"
     shell:
         """
         python3 workflow/scripts/extract_and_tag.py \
-            --sample {wildcards.sample_id} \
-            --blast {input.blast_res} \
+            --blast {input.blast} \
             --sex_map {input.sex_map} \
-            --genome {input.genome} \
-            --out_best_dir {output.best_hits} \
-            --out_all_dir {output.all_hits}
+            --out_best {output.best_tsv} \
+            --out_all {output.all_tsv} \
+            > {log} 2>&1
         """
