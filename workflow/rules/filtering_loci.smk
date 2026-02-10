@@ -1,35 +1,27 @@
-# Phase 4: Locus Filtering & Collection (No QC)
+# Phase 4: Summarize & Filter Sex-linked Loci
 
-checkpoint select_interesting_loci:
+checkpoint select_sex_linked_loci:
     """
-    Step 4.1: Checkpoint rule to determine dynamic outputs.
+    Analyze A_All reports from all samples to generate:
+    1. A complete gene list (txt)
+    2. Summary of shared loci by Order (tsv)
     """
     input:
-        all_hits = expand("results/03_locus_search/{s}/A_all", s=SAMPLES)
+        tsvs = expand("results/03_locus_search/{s}/A_All_hits.tsv", s=SAMPLES),
+        samples_tsv = "config/samples.tsv"
     output:
-        list = "results/04_filtered/interesting_loci.txt"
-    log: "logs/phase4_select_loci.log"
-    shell:
-        """
-        python3 workflow/scripts/select_loci.py \
-            --input_dirs {input.all_hits} \
-            --output {output.list}
-        """
+        # [File 1] Simple list for use in Phase 5
+        out_list = "results/04_filtered/all_sex_linked_genes.txt",
         
-rule collect_interesting_loci:
-    """
-    Step 4.2: Collect all sequences for selected loci (WITHOUT QC).
-    """
-    input:
-        loci_list = rules.select_interesting_loci.output.list,
-        all_hits = expand("results/03_locus_search/{s}/A_all", s=SAMPLES)
-    output:
-        collection = directory("results/04_filtered/collected_loci")
-    log: "logs/phase4_collection.log"
+        # [File 2] Statistical table summarized by Order
+        out_order = "results/04_filtered/sex_linked_summary_by_order.tsv"
+    log: "logs/4/sex_linked_loci_summary.log"
     shell:
         """
-        python3 workflow/scripts/collect_sequences.py \
-            --loci_list {input.loci_list} \
-            --input_dirs {input.all_hits} \
-            --output_dir {output.collection}
+        python3 workflow/scripts/summarize_sex_linked.py \
+            --tsvs {input.tsvs} \
+            --samples_tsv {input.samples_tsv} \
+            --out_list {output.out_list} \
+            --out_order {output.out_order} \
+            > {log} 2>&1
         """
