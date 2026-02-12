@@ -1,39 +1,78 @@
-# Phase 5: Global Alignment (All samples + All references)
+# Phase 6: Multiple Sequence Alignment (MSA) & Trimming
 
-rule order_based_merging:
-    """
-    Step 5.1: Merge ALL samples and ALL references into one global file per locus.
-    Output: results/05_alignment/merged_with_ref/Global_{Locus}.fasta
-    """
+# Rule 6-1: Gather Sequences
+rule gather_sequences:
     input:
-        loci_list = "results/04_filtered/interesting_loci.txt",
-        sample_sequences = "results/04_filtered/collected_loci",
-        ref_probes = "resources/query_sets" # 실제 폴더명 확인 완료
+        extracted_dirs = expand("results/05_extracted/{s}/{type}", s=SAMPLES, type=["Best", "All"]),
+        gene_list = "results/04_filtered/all_sex_linked_genes.txt"
     output:
-        merged_dir = directory("results/05_alignment/merged_with_ref")
-    log: "logs/phase5_merging.log"
+        merged = "results/06_alignment/{type}/merged/{gene}.fasta"
+    params:
+        base_dir = "results/05_extracted",
+        samples = lambda w: " ".join(SAMPLES),
+        min_taxa = config["params"]["mafft"]["min_taxa"]
+    log: "logs/6-1/gather_{type}_{gene}.log"
     shell:
         """
-        python3 workflow/scripts/merge_with_ref.py \
-            --loci_list {input.loci_list} \
-            --sample_dir {input.sample_sequences} \
-            --ref_dir {input.ref_probes} \
-            --output_dir {output.merged_dir}
+        python3 workflow/scripts/gather_seqs_for_msa.py \
+            --base_dir {params.base_dir} \
+            --out_file {output.merged} \
+            --samples {params.samples} \
+            --type_dir {wildcards.type} \
+            --gene_id {wildcards.gene} \
+            --min_taxa {params.min_taxa} \
+            > {log} 2>&1
         """
 
-rule mafft_add_alignment:
-    """
-    Step 5.2: Align the Global file using MAFFT.
-    """
+# Rule 6-2: MAFFT Alignment
+rule mafft_alignment:
     input:
-        # 파일명 패턴 변경: Global_{locus}.fasta
-        merged = "results/05_alignment/merged_with_ref/Global_{locus}.fasta"
+        merged_fasta = "results/06_alignment/{type}/merged/{gene}.fasta"
+    params:
+        ref_path = lambda w: os.path.join(config["paths"]["ref_alignment_dir"], f"{w.gene}.fasta"),
+        mafft_opts = config["params"]["mafft"]["alignment_option"]
     output:
-        aligned = "results/05_alignment/final_msa/Global_{locus}_aligned.fasta"
-    log: "logs/phase5_mafft_{locus}.log"
-    threads: 8 # 데이터가 커졌으니 쓰레드를 늘리는 게 좋습니다.
+        aln = "results/06_alignment/{type}/aligned/{gene}.aln"
+    threads: 4
+    log: "logs/6-2/mafft_{type}_{gene}.log"
     shell:
         """
-        # --auto 옵션을 사용하여 데이터 크기에 맞춰 알고리즘 자동 선택
-        mafft --amino --auto --thread {threads} {input.merged} > {output.aligned} 2> {log}
+        if [ -s "{input.merged_fasta}" ]; then
+            
+            # Case 1: Reference exists -> use --add
+            if [ -f "{params.ref_path}" ]; then
+                echo "Reference found: {params.ref_path}" > {log}
+                
+                mafft {params.mafft_opts} --add {input.merged_fasta} \
+                      --reorder {params.ref_path} > {output.aln} 2>> {log}
+            
+            # Case 2: No reference -> de novo
+            else
+                echo "No reference found. Running de novo." >> {log}
+
+                mafft {params.mafft_opts} \
+                      {input.merged_fasta} > {output.aln} 2>> {log}
+            fi
+            
+        else
+            touch {output.aln}
+        fi
+        """
+
+# Rule 6-3: TrimAl
+rule trimal_trimming:
+    input:
+        aln = "results/06_alignment/{type}/aligned/{gene}.aln"
+    output:
+        trimmed = "results/06_alignment/{type}/trimmed/{gene}.trimmed.aln"
+    params:
+        trimal_opts = config["params"]["trimal"]
+    log: "logs/6-3/trimal_{type}_{gene}.log"
+    shell:
+        """
+        if [ -s "{input.aln}" ]; then
+            trimal -in {input.aln} -out {output.trimmed} {params.trimal_opts} > {log} 2>&1
+        else
+            touch {output.trimmed}
+        fi
         """

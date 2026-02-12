@@ -10,6 +10,13 @@ params:
   min_identity: 30            # amino acid sequence identity minimum threshold (%)
   flanking_bp: 20             # BLAST hit flanking sequence length (bp)
   max_blast_hits: 10          # maximum number of BLAST hits to retain per sample per marker
+  mafft: 
+    min_taxa: 4              # minimum number of taxa required for MSA (including reference)
+    alignment_option: "--auto --adjustdirection --thread 4" # MAFFT alignment options
+  trimal: "-automated1"     # trimAl automatic mode
+  iqtree:
+    model: "MFP"            # optimal model test and tree generation (ModelFinder Plus)
+    bootstrap: 1000         # Ultrafast Bootstrap iterations
 
 # file paths
 paths:
@@ -18,17 +25,5 @@ paths:
   female_markers: "resources/sex_markers/female_sex_markers.fasta"
   male_markers: "resources/sex_markers/male_sex_markers.fasta"
   query_sets: "resources/query_sets"
-  ref_alignments: "resources/ref_aligns"
+  ref_alignment_dir: "resources/genesNT_alignments"
   results: "results"
-
-# QC filtering options
-qc:
-  remove_stop_codons: true  # options for internal stop codon
-  check_frameshift: true    # options for frameshift mutations
-
-# analysis tool additional options
-tools:
-  trimal: "-automated1"     # trimAl automatic mode
-  iqtree:
-    model: "MFP"            # optimal model test and tree generation (ModelFinder Plus)
-    bootstrap: 1000         # Ultrafast Bootstrap iterations
