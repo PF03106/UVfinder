@@ -1,0 +1,30 @@
+# ---------------------------------------------------------
+# UVfinder Pipeline Configuration
+# ---------------------------------------------------------
+
+# parameters settings
+params:
+  uv_blast_evalue: 1e-11      # E-value for UV marker BLAST searches
+  query_blast_evalue: 1e-10   # E-value for Goflag query BLAST searches
+  min_coverage: 0.3           # amino acid sequence coverage minimum threshold (%)
+  min_identity: 30            # amino acid sequence identity minimum threshold (%)
+  flanking_bp: 20             # BLAST hit flanking sequence length (bp)
+  max_blast_hits: 10          # maximum number of BLAST hits to retain per sample per marker
+  mafft: 
+    min_taxa: 4              # minimum number of taxa required for MSA (including reference)
+    alignment_option: "--auto --adjustdirection --thread 4" # MAFFT alignment options
+  trimal: "-automated1 -resoverlap 0.5 -seqoverlap 60"     # trimAl automatic mode
+  iqtree:
+    model: "TEST"            # optimal model test and tree generation (ModelFinder Plus)
+    threads: 4              # number of threads for IQ-TREE
+    bootstrap: 1000         # Ultrafast Bootstrap iterations
+
+# file paths
+paths:
+  samples_tsv: "config/samples.tsv"
+  genomes: "resources/genomes"
+  female_markers: "resources/sex_markers/female_sex_markers.fasta"
+  male_markers: "resources/sex_markers/male_sex_markers.fasta"
+  query_sets: "resources/query_sets"
+  ref_alignment_dir: "resources/genesNT_alignments"
+  results: "results"
