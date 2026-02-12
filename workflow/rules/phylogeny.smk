@@ -9,10 +9,10 @@ rule iqtree_build:
     input:
         aln = "results/06_alignment/{type}/trimmed/{gene}.trimmed.aln"
     output:
-        treefile = "results/07_phylogeny/{type}/tree/{gene}.treefile",
-        report   = "results/07_phylogeny/{type}/tree/{gene}.iqtree"
+        treefile = "results/07_phylogeny/{type}/{gene}.treefile",
+        report   = "results/07_phylogeny/{type}/{gene}.iqtree"
     params:
-        prefix = "results/07_phylogeny/{type}/tree/{gene}",
+        prefix = "results/07_phylogeny/{type}/{gene}",
         model = config["params"]["iqtree"]["model"],       
         bootstrap = config["params"]["iqtree"]["bootstrap"]
     threads: config["params"]["iqtree"]["threads"]

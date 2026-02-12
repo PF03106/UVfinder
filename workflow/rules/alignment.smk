@@ -91,8 +91,13 @@ rule trimal_trimming:
     shell:
         """
         if [ -s "{input.aln}" ]; then
-            trimal -in {input.aln} -out {output.trimmed} {params.trimal_opts} > {log} 2>&1
+            trimal -in {input.aln} -out {output.trimmed} {params.trimal_opts} > {log} 2>&1 || true
+            if [ ! -f "{output.trimmed}" ]; then
+                echo "trimAl produced no output for {wildcards.gene}. Creating empty file." >> {log}
+                touch {output.trimmed}
+            fi
         else
+            echo "Input alignment is empty. Creating empty output." > {log}
             touch {output.trimmed}
         fi
         """
