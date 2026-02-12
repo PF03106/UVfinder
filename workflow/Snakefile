@@ -8,7 +8,7 @@ samples_df = pd.read_csv("config/samples.tsv", sep="\t").set_index("sample_id", 
 # 2. make sample_id list
 SAMPLES = samples_df["sample_id"].tolist()
 
-def get_alignment_targets(wildcards):
+def get_phylogeny_targets(wildcards):
     """
     Wait until checkpoint (Phase 4) is completed,
     read the generated interesting_loci.txt and return the final tree file list.
@@ -21,7 +21,7 @@ def get_alignment_targets(wildcards):
         genes = [line.strip() for line in f if line.strip()]
         
     # 3. Return Trimmed Alignment file paths for Best and All types
-    return expand("results/06_alignment/{type}/trimmed/{gene}.trimmed.aln", 
+    return expand("results/07_phylogeny/{type}/tree/{gene}.treefile", 
                   type=["Best", "All"], 
                   gene=genes)
 # 4. Rule all
@@ -45,8 +45,8 @@ rule all:
         # Phase 5: Extract sequences
         expand("results/05_extracted/{s}/Best", s=SAMPLES),
         expand("results/05_extracted/{s}/All", s=SAMPLES),
-        # Phase 6: TrimAL and IQTree
-        get_alignment_targets
+        # Phase 6 & 7: MSA, TrimAL and IQTree
+        get_phylogeny_targets
 
 
 include: "rules/preprocessing.smk"
