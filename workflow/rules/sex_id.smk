@@ -5,6 +5,7 @@ rule blast_male:
         db_index = "results/01_blastdb/{sample_id}_renamed.nhr"
     output: "results/02_sex_id/{sample_id}_male.tblastn"
     params: db_prefix = "results/01_blastdb/{sample_id}_renamed", evalue = config["params"]["uv_blast_evalue"]
+    log: "logs/2-1/blast_male_{sample_id}.log" 
     shell: "tblastn -query {input.query} -db {params.db_prefix} -evalue {params.evalue} -outfmt '6 std qlen' -out {output}"
 
 # BLAST for female markers
@@ -14,6 +15,7 @@ rule blast_female:
         db_index = "results/01_blastdb/{sample_id}_renamed.nhr"
     output: "results/02_sex_id/{sample_id}_female.tblastn"
     params: db_prefix = "results/01_blastdb/{sample_id}_renamed", evalue = config["params"]["uv_blast_evalue"]
+    log: "logs/2-1/blast_female_{sample_id}.log"
     shell: "tblastn -query {input.query} -db {params.db_prefix} -evalue {params.evalue} -outfmt '6 std qlen' -out {output}"
 
 # ID U or V or Unknown
@@ -25,6 +27,7 @@ rule assign_sex_differential:
     params:
         min_cov = config["params"]["min_coverage"],
         min_id = config["params"]["min_identity"]
+    log: "logs/2-2/assign_sex_{sample_id}.log"
     shell:
         """
         python3 workflow/scripts/assign_sex_diff.py \
@@ -40,6 +43,7 @@ rule aggregate_sex_id:
         results = expand("results/02_sex_id/{sample_id}_sex_assignment.tsv", sample_id=SAMPLES)
     output:
         all_res = "results/02_sex_id/all_samples_sex_assignment.tsv"
+    log: "logs/2-3/aggregate_sex_id.log"
     run:
         import pandas as pd
         combined_df = pd.concat([pd.read_csv(f, sep='\t') for f in input.results])

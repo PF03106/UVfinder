@@ -12,7 +12,7 @@ rule rename_fasta:
         genus   = lambda wildcards: samples_df.loc[wildcards.sample_id, "genus"],
         species = lambda wildcards: samples_df.loc[wildcards.sample_id, "species"]
     log:
-        "logs/rename/{sample_id}.log"
+        "logs/1-1/{sample_id}.log"
     shell:
         """
         python3 workflow/scripts/rename_fasta_headers.py \
@@ -32,7 +32,7 @@ rule make_blast_db:
     params:
         db_prefix = "results/01_blastdb/{sample_id}_renamed"
     log:
-        "logs/blastdb/{sample_id}.log"
+        "logs/1-2/{sample_id}.log"
     shell:
         """
         mkdir -p results/01_blastdb
