@@ -47,6 +47,7 @@ rule all:
         expand("results/05_extracted/{s}/All", s=SAMPLES),
         # Phase 6 & 7: MSA, TrimAL and IQTree
         get_phylogeny_targets
+        expand("results/07_phylogeny/Best/{sample}_viz.png", sample=SAMPLES)
 
 
 include: "rules/preprocessing.smk"
