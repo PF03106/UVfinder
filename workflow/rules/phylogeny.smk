@@ -41,3 +41,13 @@ rule iqtree_build:
             touch {output.treefile} {output.report}
         fi
         """
+    
+rule plot_tree:
+    input:
+        "results/07_phylogeny/Best/{sample}.treefile"
+    output:
+        "results/07_phylogeny/Best/{sample}_viz.png"
+    conda:
+        "../envs/uvfinder.yaml"
+    script:
+        "../scripts/plot_tree.py"
