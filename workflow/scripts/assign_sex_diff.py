@@ -10,7 +10,7 @@ def get_best_score(file_path, min_cov, min_id):
     df = pd.read_csv(file_path, sep='\t', names=cols)
     df['coverage'] = df['length'] / df['qlen']
     
-    filtered = df[(df['pident'] >= min_id) & (df['coverage'] >= min_cov)]
+    filtered = df[df['coverage'] >= min_cov]
     
     if filtered.empty:
         return None, 0, 0
