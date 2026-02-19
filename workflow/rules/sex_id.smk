@@ -41,11 +41,24 @@ rule assign_sex_differential:
 rule aggregate_sex_id:
     input:
         results = expand("results/02_sex_id/{sample_id}_sex_assignment.tsv", sample_id=SAMPLES)
+        metadata = "config/samples.tsv"
     output:
         all_res = "results/02_sex_id/all_samples_sex_assignment.tsv"
     log: "logs/2-3/aggregate_sex_id.log"
     run:
         import pandas as pd
-        combined_df = pd.concat([pd.read_csv(f, sep='\t') for f in input.results])
-        combined_df.to_csv(output.all_res, sep='\t', index=False)
+        import os
 
+        dfs=[]
+        for f in input.results:
+            df = pd.read_csv(f, sep='\t')
+            sample_name = os.path.basename(f).replace("_sex_assignment.tsv", "")
+            df.insert(0, "sample_id", sample_name)
+            dfs.append(df)
+        combined_df = pd.concat(dfs, ignore_index=True)
+
+        meta_df = pd.read_csv(input.metadata, sep='\t')
+        final_df = pd.merge(combined_df, meta_df[['sample_id', 'genus', 'species']], on='sample_id', how='left')
+        cols = ['sample_id', 'genus', 'species'] + [col for col in final_df.columns if col not in ['sample_id', 'genus', 'species']]
+        final_df = final_df[cols]
+        final_df.to_csv(output.all_res, sep='\t', index=False)
