@@ -26,7 +26,7 @@ rule assign_sex_differential:
     output: tsv = "results/02_sex_id/{sample_id}_sex_assignment.tsv"
     params:
         min_cov = config["params"]["min_coverage"],
-        min_id = config["params"]["min_identity"]
+        max_evalue = config["params"]["uv_blast_evalue"]
     log: "logs/2-2/assign_sex_{sample_id}.log"
     shell:
         """
@@ -35,7 +35,7 @@ rule assign_sex_differential:
             --female {input.female_res} \
             --output {output.tsv} \
             --min_cov {params.min_cov} \
-            --min_id {params.min_id}
+            --max_evalue {params.max_evalue}
         """
 # Aggregate all the result from sex_sgginment.tsv
 rule aggregate_sex_id:
