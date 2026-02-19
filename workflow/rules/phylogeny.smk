@@ -1,10 +1,5 @@
 # Phase 7: Phylogeny Tree Building (IQ-TREE)
 
-# -----------------------------------------------------------------------------
-# Rule: IQ-TREE
-# Builds phylogenetic trees from trimmed alignments.
-# Uses parameters defined in config/config.yaml (Model, Bootstrap, etc.)
-# -----------------------------------------------------------------------------
 rule iqtree_build:
     input:
         aln = "results/06_alignment/{type}/trimmed/{gene}.trimmed.aln"
@@ -16,18 +11,10 @@ rule iqtree_build:
         model = config["params"]["iqtree"]["model"],       
         bootstrap = config["params"]["iqtree"]["bootstrap"]
     threads: config["params"]["iqtree"]["threads"]
-    log: "logs/7/iqtree_{type}_{gene}.log"
+    log: "logs/7-1/iqtree_{type}_{gene}.log"
     shell:
         """
         if [ -s "{input.aln}" ]; then
-            
-            # -s: Input alignment
-            # --prefix: Output file prefix
-            # -m: Model selection (MFP = ModelFinder Plus)
-            # -B: Ultrafast Bootstrap iterations
-            # -nt: Number of threads
-            # -redo: Overwrite existing files
-            
             iqtree -s {input.aln} \
                    --prefix {params.prefix} \
                    -m {params.model} \
@@ -35,19 +22,29 @@ rule iqtree_build:
                    -nt {threads} \
                    -redo \
                    > {log} 2>&1
-                   
         else
             echo "Empty alignment file. Skipping Tree building." > {log}
             touch {output.treefile} {output.report}
         fi
         """
-    
+
+# Rule 7.2: Plot Tree with ETE Toolkit
 rule plot_tree:
     input:
-        "results/07_phylogeny/Best/{sample}.treefile"
+        treefile = "results/07_phylogeny/{type}/{gene}.treefile"
     output:
-        "results/07_phylogeny/Best/{sample}_viz.png"
-    conda:
-        "../envs/uvfinder.yaml"
-    script:
-        "../scripts/plot_tree.py"
+        viz = "results/07_phylogeny/{type}/{gene}_viz.png"
+    log:
+        "logs/7-2/plot_tree_{type}_{gene}.log"
+    shell:
+        """
+        if [ -s "{input.treefile}" ]; then
+            python3 workflow/scripts/plot_tree.py \
+                --tree {input.treefile} \
+                --output_prefix {output.viz} \
+                > {log} 2>&1
+        else
+            echo "Tree file not found. Skipping visualization." > {log}
+            touch {output.viz}
+        fi
+        """
