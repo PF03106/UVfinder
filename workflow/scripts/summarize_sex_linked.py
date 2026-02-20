@@ -2,7 +2,7 @@ import pandas as pd
 import argparse
 import os
 
-def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order):
+def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_species_dir):
     print(f"--- Summarizing Sex-linked Loci from {len(tsv_files)} samples ---")
     
     # 1. Load sample metadata (Order)
@@ -53,6 +53,8 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order):
     if not collected_data_dict:
         open(out_list, 'w').close()
         pd.DataFrame(columns=["Order", "Gene", "Count", "Samples"]).to_csv(out_order, sep='\t', index=False)
+        if out_species_dir:
+            os.makedirs(out_species_dir, exist_ok=True)
         return
 
     # Convert dictionary values to DataFrame (already de-duplicated)
@@ -82,9 +84,21 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order):
     summary_df = summary_df.sort_values(by=["Order", "Count"], ascending=[True, False])
     summary_df.to_csv(out_order, sep='\t', index=False)
 
+    # --- [File 3] Per-species/sample gene lists ---
+    if out_species_dir:
+        os.makedirs(out_species_dir, exist_ok=True)
+        for sample_name, group in full_df.groupby("Sample"):
+            sample_genes = sorted(group["Gene"].unique())
+            out_file = os.path.join(out_species_dir, f"{sample_name}_sex_linked_genes.txt")
+            with open(out_file, 'w') as f:
+                for gene in sample_genes:
+                    f.write(f"{gene}\n")
+
     print(f"✅ Summary Generated:")
     print(f"   - Unique Genes: {len(unique_genes)}")
-    print(f"   - Output: {out_order}")
+    print(f"   - Total Samples Processed: {full_df['Sample'].nunique()}")
+    print(f"   - Order Summary Output: {out_order}")
+    print(f"   - Per-species Lists Directory: {out_species_dir}/")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -92,7 +106,8 @@ if __name__ == "__main__":
     parser.add_argument("--samples_tsv", required=True)
     parser.add_argument("--out_list", required=True)
     parser.add_argument("--out_order", required=True)
+    parser.add_argument("--out_species_dir", required=True, default="species_sex_linked_lists", help="Directory to save per-species list.txt files")
     
     args = parser.parse_args()
     
-    summarize_sex_linked(args.tsvs, args.samples_tsv, args.out_list, args.out_order)
+    summarize_sex_linked(args.tsvs, args.samples_tsv, args.out_list, args.out_order, args.out_species_dir)
