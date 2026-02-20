@@ -2,7 +2,7 @@ import pandas as pd
 import argparse
 import os
 
-def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order):
+def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_species):
     print(f"--- Summarizing Sex-linked Loci from {len(tsv_files)} samples ---")
     
     # 1. Load sample metadata (Order)
@@ -13,7 +13,6 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order):
         print(f"❌ Error reading samples.tsv: {e}")
         return
 
-    # Dictionary for efficient duplicate removal (key: (Gene, Sample, Order, Sex_Tag))
     collected_data_dict = {}
 
     # 2. Iterate through all sample TSVs
@@ -28,16 +27,13 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order):
             df = pd.read_csv(tsv, sep='\t')
             if 'sex_tag' not in df.columns: continue
 
-            # Filter for U/V sex tags
             targets = df[df['sex_tag'].str.upper().isin(['U', 'V'])]
             
             if not targets.empty:
                 for _, row in targets.iterrows():
-                    # Extract gene ID cleanly (G4989|... -> G4989)
                     locus = str(row['qseqid']).split('|')[0]
                     sex_tag = row['sex_tag']
                     
-                    # Use tuple as unique key to prevent duplicates at insertion time
                     key = (locus, sample_id, order, sex_tag)
                     collected_data_dict[key] = {
                         "Gene": locus,
@@ -53,9 +49,9 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order):
     if not collected_data_dict:
         open(out_list, 'w').close()
         pd.DataFrame(columns=["Order", "Gene", "Count", "Samples"]).to_csv(out_order, sep='\t', index=False)
+        pd.DataFrame(columns=["Sample", "Order", "Gene_Count", "Sex_Linked_Genes"]).to_csv(out_species, sep='\t', index=False)
         return
 
-    # Convert dictionary values to DataFrame (already de-duplicated)
     full_df = pd.DataFrame(list(collected_data_dict.values()))
 
     # --- [File 1] Gene list (all_sex_linked_genes.txt) ---
@@ -66,25 +62,38 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order):
             
     # --- [File 2] Statistical summary by Order (sex_linked_summary_by_order.tsv) ---
     summary_list = []
-    
     for (order_name, gene_name), group in full_df.groupby(["Order", "Gene"]):
         count = group["Sample"].nunique()
         samples_str = ",".join(sorted(group["Sample"].unique()))
-        
         summary_list.append({
             "Order": order_name,
             "Gene": gene_name,
             "Count": count,
             "Samples": samples_str
         })
-    
-    summary_df = pd.DataFrame(summary_list)
-    summary_df = summary_df.sort_values(by=["Order", "Count"], ascending=[True, False])
-    summary_df.to_csv(out_order, sep='\t', index=False)
+    pd.DataFrame(summary_list).sort_values(by=["Order", "Count"], ascending=[True, False]).to_csv(out_order, sep='\t', index=False)
+
+    # --- [File 3] Single TSV summary by Sample/Species ---
+    sample_summary_list = []
+    for sample_name, group in full_df.groupby("Sample"):
+        genes = sorted(group["Gene"].unique())
+        order_name = group["Order"].iloc[0]
+        
+        sample_summary_list.append({
+            "Sample": sample_name,
+            "Order": order_name,
+            "Gene_Count": len(genes),
+            "Sex_Linked_Genes": ",".join(genes)
+        })
+        
+    sample_summary_df = pd.DataFrame(sample_summary_list)
+    sample_summary_df.to_csv(out_species, sep='\t', index=False)
 
     print(f"✅ Summary Generated:")
     print(f"   - Unique Genes: {len(unique_genes)}")
-    print(f"   - Output: {out_order}")
+    print(f"   - Output 1 (List): {out_list}")
+    print(f"   - Output 2 (By Order): {out_order}")
+    print(f"   - Output 3 (By Species): {out_species}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -92,7 +101,8 @@ if __name__ == "__main__":
     parser.add_argument("--samples_tsv", required=True)
     parser.add_argument("--out_list", required=True)
     parser.add_argument("--out_order", required=True)
+    parser.add_argument("--out_species", required=True) 
     
     args = parser.parse_args()
     
-    summarize_sex_linked(args.tsvs, args.samples_tsv, args.out_list, args.out_order)
+    summarize_sex_linked(args.tsvs, args.samples_tsv, args.out_list, args.out_order, args.out_species)

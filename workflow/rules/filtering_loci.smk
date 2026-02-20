@@ -10,11 +10,9 @@ checkpoint select_sex_linked_loci:
         tsvs = expand("results/03_locus_search/{s}/A_All_hits.tsv", s=SAMPLES),
         samples_tsv = "config/samples.tsv"
     output:
-        # [File 1] Simple list for use in Phase 5
         out_list = "results/04_filtered/all_sex_linked_genes.txt",
-        
-        # [File 2] Statistical table summarized by Order
-        out_order = "results/04_filtered/sex_linked_summary_by_order.tsv"
+        out_order = "results/04_filtered/sex_linked_summary_by_order.tsv",
+        out_species = "results/04_filtered/sex_linked_species_lists.tsv"
     log: "logs/4/sex_linked_loci_summary.log"
     shell:
         """
@@ -23,5 +21,6 @@ checkpoint select_sex_linked_loci:
             --samples_tsv {input.samples_tsv} \
             --out_list {output.out_list} \
             --out_order {output.out_order} \
+            --out_species {output.out_species} \
             > {log} 2>&1
         """
