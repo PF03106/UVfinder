@@ -52,9 +52,7 @@ rule partition_blast_results:
     Step 3.3: Process raw BLAST results to create organized tables (TSV).
     - Maps BLAST hits to Sex Chromosomes (U, V, Autosome, Unknown).
     - Ranks hits by E-value (Rank 1 = Best).
-    - Splits results into 'Best' (Rank 1 only) and 'All' (All ranks).
-    * Note: This step does NOT extract sequences yet.
-    """
+    - Splits results into 'Best' (Rank 1 only) and 'All' (All ranks).    """
     input:
         blast = "results/03_locus_search/{s}/{s}_blast_results.txt",
         sex_map = "results/02_sex_id/{s}_sex_assignment.tsv"

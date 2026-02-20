@@ -3,8 +3,8 @@
 checkpoint select_sex_linked_loci:
     """
     Analyze A_All reports from all samples to generate:
-    1. A complete gene list (txt)
-    2. Summary of shared loci by Order (tsv)
+    1. A complete sex linked gene list (txt)
+    2. Summary of shared sex linked loci by Order (tsv)
     """
     input:
         tsvs = expand("results/03_locus_search/{s}/A_All_hits.tsv", s=SAMPLES),

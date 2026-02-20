@@ -2,7 +2,7 @@ import pandas as pd
 import argparse
 import os
 
-def get_best_score(file_path, min_cov, min_id):
+def get_best_score(file_path, min_cov, max_evalue):
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return None, 0, 0
     
@@ -10,7 +10,7 @@ def get_best_score(file_path, min_cov, min_id):
     df = pd.read_csv(file_path, sep='\t', names=cols)
     df['coverage'] = df['length'] / df['qlen']
     
-    filtered = df[(df['pident'] >= min_id) & (df['coverage'] >= min_cov)]
+    filtered = df[(df['coverage'] >= min_cov) & (df['evalue'] <= max_evalue)]
     
     if filtered.empty:
         return None, 0, 0
@@ -25,11 +25,11 @@ def main():
     parser.add_argument("--female", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--min_cov", type=float)
-    parser.add_argument("--min_id", type=float)
+    parser.add_argument("--max_evalue", type=float)
     args = parser.parse_args()
 
-    m_contig, m_score, m_cov = get_best_score(args.male, args.min_cov, args.min_id)
-    f_contig, f_score, f_cov = get_best_score(args.female, args.min_cov, args.min_id)
+    m_contig, m_score, m_cov = get_best_score(args.male, args.min_cov, args.max_evalue)
+    f_contig, f_score, f_cov = get_best_score(args.female, args.min_cov, args.max_evalue)
 
     # Sex identification logic: Select higher bit-score (male vs female)
     if m_score > f_score:
