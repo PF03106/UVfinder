@@ -40,7 +40,7 @@ rule assign_sex_differential:
 # Aggregate all the result from sex_sgginment.tsv
 rule aggregate_sex_id:
     input:
-        results = expand("results/02_sex_id/{sample_id}_sex_assignment.tsv", sample_id=SAMPLES)
+        results = expand("results/02_sex_id/{sample_id}_sex_assignment.tsv", sample_id=SAMPLES),
         metadata = "config/samples.tsv"
     output:
         all_res = "results/02_sex_id/all_samples_sex_assignment.tsv"
