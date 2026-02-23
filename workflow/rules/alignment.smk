@@ -7,7 +7,6 @@ rule gather_sequences:
         gene_list = "results/04_filtered/all_sex_linked_genes.txt"
     output:
         merged = "results/06_alignment/{type}/merged/{gene}.fasta"
-        skipped = "results/06_alignment/{type}/skipped_genes.txt"
     params:
         base_dir = "results/05_extracted",
         samples = lambda w: " ".join(SAMPLES),
