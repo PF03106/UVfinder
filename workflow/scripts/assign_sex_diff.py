@@ -33,11 +33,11 @@ def main():
 
     # Sex identification logic: Select higher bit-score (male vs female) (m_score and f_score are bit-scores of male and female best hits respectively)
     if m_score > f_score:
-        res = {'contig_id': m_contig, 'sex': 'V', 'score': m_score, 'cov': m_cov}
+        res = {'contig_id': m_contig, 'sex': 'V', 'bit-score': m_score, 'cov': m_cov}
     elif f_score > m_score:
-        res = {'contig_id': f_contig, 'sex': 'U', 'score': f_score, 'cov': f_cov}
+        res = {'contig_id': f_contig, 'sex': 'U', 'bit-score': f_score, 'cov': f_cov}
     else:
-        res = {'contig_id': 'None', 'sex': 'Unknown', 'score': 0, 'cov': 0}
+        res = {'contig_id': 'None', 'sex': 'Unknown', 'bit-score': 0, 'cov': 0}
 
     pd.DataFrame([res]).to_csv(args.output, sep='\t', index=False)
 
