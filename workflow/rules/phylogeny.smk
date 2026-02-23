@@ -1,5 +1,5 @@
 # Phase 7: Phylogeny Tree Building (IQ-TREE)
-
+# Rule 7.1: Build Tree with IQ-TREE
 rule iqtree_build:
     input:
         aln = "results/06_alignment/{type}/trimmed/{gene}.trimmed.aln"
@@ -28,19 +28,21 @@ rule iqtree_build:
         fi
         """
 
-# Rule 7.2: Plot Tree with ETE Toolkit
+# Rule 7.2: Plot Tree with ETE Toolkit (Only for 'Best' hits)
 rule plot_tree:
     input:
-        treefile = "results/07_phylogeny/{type}/{gene}.treefile"
+        treefile = "results/07_phylogeny/Best/{gene}.treefile", # <-- 여기에 콤마 추가!
+        metadata = "config/samples.tsv"
     output:
-        viz = "results/07_phylogeny/{type}/{gene}_viz.png"
+        viz = "results/07_phylogeny/Best/{gene}_viz.png"
     log:
-        "logs/7-2/plot_tree_{type}_{gene}.log"
+        "logs/7-2/plot_tree_Best_{gene}.log"
     shell:
         """
         if [ -s "{input.treefile}" ]; then
             python3 workflow/scripts/plot_tree.py \
                 --tree {input.treefile} \
+                --metadata {input.metadata} \ # <-- 스크립트에 메타데이터 전달 추가!
                 --output_prefix {output.viz} \
                 > {log} 2>&1
         else
