@@ -37,7 +37,7 @@ def main():
     elif f_score > m_score:
         res = {'sex_chromosome': f_contig, 'sex': 'U', 'bit_score': f_score, 'coverage': f_cov}
     else:
-        res = {'sex_chromosome': 'None', 'sex': 'Unknown', 'bit_score': 0, 'coverage': 0}
+        res = {'sex_chromosome': 'Unknown', 'sex': 'Unknown', 'bit_score': 0, 'coverage': 0}
 
     pd.DataFrame([res]).to_csv(args.output, sep='\t', index=False)
 
