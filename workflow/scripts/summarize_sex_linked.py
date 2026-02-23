@@ -10,7 +10,7 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_specie
     # 1. Load sample metadata (Order)
     try:
         sample_meta = pd.read_csv(samples_tsv, sep='\t')
-        sample_to_order = sample_meta.set_index('sample_id')['order'].to_dict()
+        sample_info = sample_meta.set_index('sample_id')[['order', 'genus', 'species']].to_dict('index')
     except Exception as e:
         print(f"❌ Error reading samples.tsv: {e}")
         return
@@ -23,8 +23,11 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_specie
             continue
             
         sample_id = os.path.basename(os.path.dirname(tsv))
-        order = sample_to_order.get(sample_id, "Unknown")
-        
+        info = sample_info.get(sample_id, {'order': 'Unknown', 'genus': 'Unknown', 'species': 'Unknown'})
+        order = info['order']
+        genus = info['genus']
+        species = info['species']
+
         try:
             df = pd.read_csv(tsv, sep='\t')
             if 'sex_tag' not in df.columns: continue
@@ -41,6 +44,8 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_specie
                         "Gene": locus,
                         "Sample": sample_id,
                         "Order": order,
+                        "Genus": genus,
+                        "Species": species,
                         "Sex_Tag": sex_tag
                     }
                     
@@ -51,7 +56,7 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_specie
     if not collected_data_dict:
         open(out_list, 'w').close()
         pd.DataFrame(columns=["Order", "Gene", "Count", "Samples"]).to_csv(out_order, sep='\t', index=False)
-        pd.DataFrame(columns=["Sample", "Order", "Gene_Count", "Sex_Linked_Genes"]).to_csv(out_species, sep='\t', index=False)
+        pd.DataFrame(columns=["Sample", "Order","Genus", "Species", "Gene_Count", "Sex_Linked_Genes"]).to_csv(out_species, sep='\t', index=False)
         return
 
     full_df = pd.DataFrame(list(collected_data_dict.values()))
@@ -79,17 +84,20 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_specie
     sample_summary_list = []
     for sample_name, group in full_df.groupby("Sample"):
         genes = sorted(group["Gene"].unique())
-        order_name = group["Order"].iloc[0]
         
         sample_summary_list.append({
             "Sample": sample_name,
-            "Order": order_name,
             "Gene_Count": len(genes),
             "Sex_Linked_Genes": ",".join(genes)
         })
         
     sample_summary_df = pd.DataFrame(sample_summary_list)
-    sample_summary_df.to_csv(out_species, sep='\t', index=False)
+    all_samples_meta = sample_meta[['sample_id', 'order', 'genus', 'species']].rename(columns={'sample_id': 'Sample', 'order': 'Order', 'genus': 'Genus', 'species': 'Species'})
+    final_sample_summary = pd.merge(all_samples_meta, sample_summary_df, on='Sample', how='left')
+    final_sample_summary['Gene_Count'] = final_sample_summary['Gene_Count'].fillna(0).astype(int)
+    final_sample_summary['Sex_Linked_Genes'] = final_sample_summary['Sex_Linked_Genes'].fillna("")
+    columns_order = ["Sample", "Order", "Genus", "Species", "Gene_Count", "Sex_Linked_Genes"]
+    final_sample_summary[columns_order].to_csv(out_species, sep='\t', index=False)
 
     print(f"✅ Summary Generated:")
     print(f"   - Unique Genes: {len(unique_genes)}")
