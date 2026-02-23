@@ -31,13 +31,13 @@ def main():
     m_contig, m_score, m_cov = get_best_score(args.male, args.min_cov, args.max_evalue)
     f_contig, f_score, f_cov = get_best_score(args.female, args.min_cov, args.max_evalue)
 
-    # Sex identification logic: Select higher bit-score (male vs female)
+    # Sex identification logic: Select higher bit-score (male vs female) (m_score and f_score are bit-scores of male and female best hits respectively)
     if m_score > f_score:
-        res = {'contig_id': m_contig, 'sex': 'V', 'score': m_score, 'cov': m_cov}
+        res = {'sex_chromosome': m_contig, 'sex': 'V', 'bit_score': m_score, 'coverage': m_cov}
     elif f_score > m_score:
-        res = {'contig_id': f_contig, 'sex': 'U', 'score': f_score, 'cov': f_cov}
+        res = {'sex_chromosome': f_contig, 'sex': 'U', 'bit_score': f_score, 'coverage': f_cov}
     else:
-        res = {'contig_id': 'None', 'sex': 'Unknown', 'score': 0, 'cov': 0}
+        res = {'sex_chromosome': 'Unknown', 'sex': 'Unknown', 'bit_score': 0, 'coverage': 0}
 
     pd.DataFrame([res]).to_csv(args.output, sep='\t', index=False)
 

@@ -9,9 +9,8 @@ def parse_chrom_id(header_string):
     e.g.: '...Chr1...' -> '1', '...ChrU...' -> 'U'
     If no match found, returns the original string.
     """
-    match = re.search(r'Chr(.+)', str(header_string), re.IGNORECASE)
+    match = re.search(r'Chr', str(header_string), re.IGNORECASE)
     if match:
-        # Strip whitespace or pipes that might follow
         return match.group(1).strip()
     return str(header_string)
 
@@ -25,30 +24,34 @@ def load_sex_map(file_path):
       - Everything else -> 'A' (Autosome)
     """
     mapping = {}
+    default_tag = 'A' # Default to Autosome
+    
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-        return mapping
+        return mapping, 'N' # If no file, everything is Unknown (N)
         
     try:
         df = pd.read_csv(file_path, sep='\t')
         for _, row in df.iterrows():
-            if str(row['contig_id']).lower() == 'none': continue
+            sex_chromosome = str(row['sex_chromosome']).strip()
+            sex = str(row['sex']).strip()
             
-            # 1. Extract chromosome ID from contig_id
-            c_id = parse_chrom_id(row['contig_id'])
+            # If sex is unknown or no sex chromosome was found, set default tag to 'N'
+            if sex_chromosome == 'Unknown' or sex == 'Unknown':
+                default_tag = 'N'
+                continue 
             
-            # 2. Determine Sex Tag
-            sex_raw = str(row['sex']).lower()
-            if sex_raw == 'u': tag = 'U'
-            elif sex_raw == 'v': tag = 'V'
-            elif sex_raw == 'unknown': tag = 'N'
-            else: tag = 'A'
-            
-            mapping[c_id] = tag
+            # Valid sex chromosome found
+            c_id = parse_chrom_id(sex_chromosome)
+            if sex == 'U': 
+                mapping[c_id] = 'U'
+            elif sex == 'V': 
+                mapping[c_id] = 'V'
             
     except Exception as e:
         print(f"Warning loading sex map: {e}")
+        default_tag = 'N' # Fallback to N on error
         
-    return mapping
+    return mapping, default_tag
 
 def is_overlapping(start1, end1, start2, end2, threshold=0.5):
     """
