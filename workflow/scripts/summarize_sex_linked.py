@@ -1,3 +1,5 @@
+# !/usr/bin/env python3
+# # Phase 4: Summarize & Filter Sex-linked Loci
 import pandas as pd
 import argparse
 import os
