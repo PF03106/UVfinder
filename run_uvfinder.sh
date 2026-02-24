@@ -20,5 +20,5 @@ module load conda
 conda activate /home/seyeonkim/miniconda3/envs/uvfinder
 
 # 3. Run Snakemake
-# snakemake --unlock
+snakemake --unlock
 snakemake --cores 8 -p --latency-wait 120 --keep-going --rerun-incomplete 

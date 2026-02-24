@@ -13,7 +13,7 @@ def get_best_score(file_path, min_cov, max_evalue):
     filtered = df[
         (df['coverage'] >= min_cov) & 
         (df['evalue'] <= max_evalue) & 
-        (df['sseqid'].str.contains(r'Chr\d{1,2}$', regex=True, na=False)) 
+        (df['sseqid'].str.contains(r'Chr(\d{1,2}|[a-zA-Z])$', regex=True, na=False)) 
     ]
     
     if filtered.empty:
