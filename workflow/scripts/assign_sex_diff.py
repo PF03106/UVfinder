@@ -9,8 +9,12 @@ def get_best_score(file_path, min_cov, max_evalue):
     cols = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore", "qlen"]
     df = pd.read_csv(file_path, sep='\t', names=cols)
     df['coverage'] = df['length'] / df['qlen']
-    
-    filtered = df[(df['coverage'] >= min_cov) & (df['evalue'] <= max_evalue)]
+
+    filtered = df[
+        (df['coverage'] >= min_cov) & 
+        (df['evalue'] <= max_evalue) & 
+        (df['sseqid'].str.contains(r'Chr(\d{1,2}|[a-zA-Z])$', regex=True, na=False)) 
+    ]
     
     if filtered.empty:
         return None, 0, 0
