@@ -9,7 +9,8 @@ def parse_chrom_id(header_string):
     e.g.: '...Chr1...' -> '1', '...ChrU...' -> 'U'
     If no match found, returns the original string.
     """
-    match = re.search(r'Chr', str(header_string), re.IGNORECASE)
+    
+    match = re.search(r'Chr(\d{1,2}|[a-zA-Z])$', str(header_string), re.IGNORECASE)
     if match:
         return match.group(1).strip()
     return str(header_string)
