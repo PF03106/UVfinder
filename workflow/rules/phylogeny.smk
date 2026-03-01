@@ -42,7 +42,7 @@ rule plot_tree:
         if [ -s "{input.treefile}" ]; then
             python3 workflow/scripts/plot_tree.py \
                 --tree {input.treefile} \
-                --metadata {input.metadata} \ # <-- 스크립트에 메타데이터 전달 추가!
+                --metadata {input.metadata} \
                 --output_prefix {output.viz} \
                 > {log} 2>&1
         else
