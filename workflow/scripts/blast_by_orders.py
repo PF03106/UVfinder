@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import argparse
 import pandas as pd
@@ -47,7 +49,24 @@ def filter_probes_by_order(sample_id, samples_tsv, probe_dir, output_fasta):
                     count += 1
     
     if count == 0:
+        # If there's no probe matching the order, blast against all probes as a fallback (to avoid empty BLAST input)
         print(f"⚠️ Warning: No matching probes found for order '{order_norm}' in {sample_id}.")
+        print("🔄 Fallback: Do not pull by order. Just blast against all probe sets...")
+        
+        with open(output_fasta, "w") as out_f:
+            for locus_file in os.listdir(probe_dir):
+                if not locus_file.endswith(".fasta"): continue
+                
+                locus_id = locus_file.split(".")[0]
+                locus_path = os.path.join(probe_dir, locus_file)
+                
+                for record in SeqIO.parse(locus_path, "fasta"):
+                    record.id = f"{locus_id}|{record.id}"
+                    record.description = record.id 
+                    
+                    SeqIO.write(record, out_f, "fasta")
+                    count += 1
+        print(f"✅ Fallback Success: Successfully collected {count} ALL probes for {sample_id}.")
     else:
         print(f"✅ Successfully collected {count} probes for {sample_id}.")
 

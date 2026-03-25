@@ -124,7 +124,7 @@ def partition_blast(blast_file, sex_map_file, out_best, out_all):
             is_redundant = False
             for saved in saved_regions:
                 saved_chrom, saved_start, saved_end = saved
-                if chrom == saved_chrom and is_overlapping(sstart, send, saved_start, saved_end):
+                if chrom == saved_chrom and is_overlapping(sstart, send, saved_start, saved_end, threshold=overlap_threshold):
                     is_redundant = True
                     break
             
@@ -152,6 +152,7 @@ if __name__ == "__main__":
     parser.add_argument("--sex_map", required=True, help="Input sex assignment file (tsv)")
     parser.add_argument("--out_best", required=True, help="Output path for best hits per locus")
     parser.add_argument("--out_all", required=True, help="Output path for all non-redundant hits")
+    parser.add_argument("--overlap_threshold", type=float, default=0.5, help="Threshold for overlapping BLAST hits (0.0 to 1.0)")
     args = parser.parse_args()
     
-    partition_blast(args.blast, args.sex_map, args.out_best, args.out_all)
+    partition_blast(args.blast, args.sex_map, args.out_best, args.out_all, overlap_threshold=args.overlap_threshold)
