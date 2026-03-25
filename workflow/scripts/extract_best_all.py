@@ -74,7 +74,7 @@ def is_overlapping(start1, end1, start2, end2, threshold=0.5):
     
     return False
 
-def partition_blast(blast_file, sex_map_file, out_best, out_all):
+def partition_blast(blast_file, sex_map_file, out_best, out_all, overlap_threshold):
     """
     Main logic to tag BLAST hits and partition them into Best and All hits.
     """
