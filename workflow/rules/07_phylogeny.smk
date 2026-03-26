@@ -1,13 +1,17 @@
+# workflow/rules/07_phylogeny.smk
 # Phase 7: Phylogeny Tree Building (IQ-TREE)
+
+RESULTS_DIR = config["paths"]["results"]    # path for output files (result directory)
+
 # Rule 7.1: Build Tree with IQ-TREE
 rule iqtree_build:
     input:
-        aln = "results/06_alignment/{type}/trimmed/{gene}.trimmed.aln"
+        aln = f"{{RESULTS_DIR}}/06_alignment/{{type}}/trimmed/{{gene}}.trimmed.aln"
     output:
-        treefile = "results/07_phylogeny/{type}/{gene}.treefile",
-        report   = "results/07_phylogeny/{type}/{gene}.iqtree"
+        treefile = f"{{RESULTS_DIR}}/07_phylogeny/{{type}}/{{gene}}.treefile",
+        report   = f"{{RESULTS_DIR}}/07_phylogeny/{{type}}/{{gene}}.iqtree"
     params:
-        prefix = "results/07_phylogeny/{type}/{gene}",
+        prefix = f"{{RESULTS_DIR}}/07_phylogeny/{{type}}/{{gene}}",
         model = config["params"]["iqtree"]["model"],       
         bootstrap = config["params"]["iqtree"]["bootstrap"]
     threads: config["params"]["iqtree"]["threads"]
@@ -31,10 +35,10 @@ rule iqtree_build:
 # Rule 7.2: Plot Tree with ETE Toolkit (Only for 'Best' hits)
 rule plot_tree:
     input:
-        treefile = "results/07_phylogeny/Best/{gene}.treefile", # <-- 여기에 콤마 추가!
+        treefile = f"{{RESULTS_DIR}}/07_phylogeny/Best/{{gene}}.treefile",
         metadata = "config/samples.tsv"
     output:
-        viz = "results/07_phylogeny/Best/{gene}_viz.png"
+        viz = f"{{RESULTS_DIR}}/07_phylogeny/Best/{{gene}}_viz.png"
     log:
         "logs/7-2/plot_tree_Best_{gene}.log"
     shell:
