@@ -1,5 +1,5 @@
 # workflow/rules/07_phylogeny.smk
-# Phase 7: Phylogeny Tree Building (IQ-TREE)
+# Phylogeny Tree Building (IQ-TREE)
 
 RESULTS_DIR = config["paths"]["results"]    # path for output files (result directory)
 
