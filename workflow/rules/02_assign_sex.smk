@@ -36,7 +36,7 @@ rule assign_sex_differential:
         female_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_female.tblastn"
     output: tsv = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv"
     params:
-        min_cov = config["params"]["min_coverage_UV"],
+        min_cov_UV = config["params"]["min_coverage_UV"],
         max_evalue = config["params"]["uv_blast_evalue"]
     log: f"logs/2-2/assign_sex_{{sample_id}}.log"
     shell:
