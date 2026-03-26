@@ -14,7 +14,7 @@ rule prepare_order_probes:
     log: "logs/3-1/prepare_probes_{sample_id}.log"
     shell:
         """
-        python3 workflow/scripts/blast_by_order.py \
+        python3 workflow/scripts/blast_by_orders.py \
             --sample {wildcards.sample_id} \
             --samples_tsv {input.samples_tsv} \
             --probe_dir {input.probe_dir} \
