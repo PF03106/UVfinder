@@ -10,7 +10,7 @@ checkpoint select_sex_linked_loci:
     2. Summary of shared sex linked loci by Order and species (tsv)
     """
     input:
-        tsvs = expand(f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/A_All_hits.tsv", s=SAMPLES),
+        tsvs = expand(f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/A_All_hits.tsv", sample_id=SAMPLES),
         samples_tsv = "config/samples.tsv"
     output:
         out_list = f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt",
