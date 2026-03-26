@@ -8,8 +8,8 @@ rule rename_fasta:
     input:
         fasta = lambda wildcards: f"{GENOMES_DIR}/{samples_df.loc[wildcards.sample_id, 'genome_filename']}"
     output:
-        fasta = f"{RESULTS_DIR}/00_renamed/{sample_id}_renamed.fasta",
-        map = f"{RESULTS_DIR}/00_renamed/{sample_id}_mapping.tsv"
+        fasta = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_renamed.fasta",
+        map = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_mapping.tsv"
     params:
         #  wildcards.sample_id from Snakefile SAMPLES list
         order   = lambda wildcards: samples_df.loc[wildcards.sample_id, "order"],
@@ -31,11 +31,11 @@ rule rename_fasta:
 
 rule make_blast_db:
     input:
-        fna = f"{RESULTS_DIR}/00_renamed/{sample_id}_renamed.fasta"
+        fna = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_renamed.fasta"
     output:
-        db_file = f"{RESULTS_DIR}/01_blastdb/{sample_id}_renamed.nhr"
+        db_file = f"{RESULTS_DIR}/01_blastdb/{{sample_id}}_renamed.nhr"
     params:
-        db_prefix = f"{RESULTS_DIR}/01_blastdb/{sample_id}_renamed"
+        db_prefix = f"{RESULTS_DIR}/01_blastdb/{{sample_id}}_renamed"
     log:
         "logs/1-2/{sample_id}.log"
     shell:
