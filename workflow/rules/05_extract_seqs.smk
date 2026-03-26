@@ -8,15 +8,14 @@ rule extract_best_sequences:
     input:
         tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/B_Best_hits.tsv",
         genome = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_renamed.fasta",
-        loci_list = f"{RESULTS_DIR}/04_filtered/{{sample_id}}_all_sex_linked_genes.txt"
+        loci_list = f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt"
     output:
         out_dir = directory(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/Best")
     params:
         sample = "{sample_id}",
-        # Get values from config (use default if not set)
-        flank = config.get("flanking_bp", 20),
+        flank = config["params"]["flanking_bp"],
         # Best hits only have 1 record, but for code compatibility we use max_hits parameter
-        max_hits = config.get("max_blast_hits", 10)
+        max_hits = config["params"]["max_blast_hits"]
     log: "logs/5_best/extract_best_{sample_id}.log"
     shell:
         """
@@ -36,13 +35,13 @@ rule extract_all_sequences:
     input:
         tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/A_All_hits.tsv",
         genome = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_renamed.fasta",
-        loci_list = f"{RESULTS_DIR}/04_filtered/{{sample_id}}_all_sex_linked_genes.txt"
+        loci_list = f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt"
     output:
         out_dir = directory(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/All")
     params:
         sample = "{sample_id}",
-        flank = config.get("flanking_bp", 20),
-        max_hits = config.get("max_blast_hits", 10)
+        flank = config["params"]["flanking_bp"],
+        max_hits = config["params"]["max_blast_hits"]
     log: "logs/5_all/extract_all_{sample_id}.log"
     shell:
         """
