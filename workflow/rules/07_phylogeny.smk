@@ -6,12 +6,12 @@ RESULTS_DIR = config["paths"]["results"]    # path for output files (result dire
 # Rule 7.1: Build Tree with IQ-TREE
 rule iqtree_build:
     input:
-        aln = f"{{RESULTS_DIR}}/06_alignment/{{type}}/trimmed/{{gene}}.trimmed.aln"
+        aln = f"{RESULTS_DIR}/06_alignment/{{type}}/trimmed/{{gene}}.trimmed.aln"
     output:
-        treefile = f"{{RESULTS_DIR}}/07_phylogeny/{{type}}/{{gene}}.treefile",
-        report   = f"{{RESULTS_DIR}}/07_phylogeny/{{type}}/{{gene}}.iqtree"
+        treefile = f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}.treefile",
+        report   = f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}.iqtree"
     params:
-        prefix = f"{{RESULTS_DIR}}/07_phylogeny/{{type}}/{{gene}}",
+        prefix = f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}",
         model = config["params"]["iqtree"]["model"],       
         bootstrap = config["params"]["iqtree"]["bootstrap"]
     threads: config["params"]["iqtree"]["threads"]
@@ -35,10 +35,10 @@ rule iqtree_build:
 # Rule 7.2: Plot Tree with ETE Toolkit (Only for 'Best' hits)
 rule plot_tree:
     input:
-        treefile = f"{{RESULTS_DIR}}/07_phylogeny/Best/{{gene}}.treefile",
+        treefile = f"{RESULTS_DIR}/07_phylogeny/Best/{{gene}}.treefile",
         metadata = "config/samples.tsv"
     output:
-        viz = f"{{RESULTS_DIR}}/07_phylogeny/Best/{{gene}}_viz.png"
+        viz = f"{RESULTS_DIR}/07_phylogeny/Best/{{gene}}_viz.png"
     log:
         "logs/7-2/plot_tree_Best_{gene}.log"
     shell:

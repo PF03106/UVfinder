@@ -6,12 +6,12 @@ RESULTS_DIR = config["paths"]["results"]    # path for output files (result dire
 # Rule 1: Gather Sequences
 rule gather_sequences:
     input:
-        extracted_dirs = expand(f"{{RESULTS_DIR}}/05_extracted/{{sample_id}}/{{type}}", sample_id=SAMPLES, type=["Best", "All"]),
-        gene_list = f"{{RESULTS_DIR}}/04_filtered/all_sex_linked_genes.txt"
+        extracted_dirs = expand(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/{{type}}", sample_id=SAMPLES, type=["Best", "All"]),
+        gene_list = f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt"
     output:
-        merged = f"{{RESULTS_DIR}}/06_alignment/{{type}}/merged/{{gene}}.fasta"
+        merged = f"{RESULTS_DIR}/06_alignment/{{type}}/merged/{{gene}}.fasta"
     params:
-        base_dir = f"{{RESULTS_DIR}}/05_extracted",
+        base_dir = f"{RESULTS_DIR}/05_extracted",
         samples = lambda w: " ".join(SAMPLES),
         min_taxa = config["params"]["mafft"]["min_taxa"]
     log: "logs/6-1/gather_{type}_{gene}.log"
@@ -30,12 +30,12 @@ rule gather_sequences:
 # Rule 2: MAFFT Alignment (Alignment with Reference included)
 rule mafft_alignment:
     input:
-        merged_fasta = f"{{RESULTS_DIR}}/06_alignment/{{type}}/merged/{{gene}}.fasta"
+        merged_fasta = f"{RESULTS_DIR}/06_alignment/{{type}}/merged/{{gene}}.fasta"
     params:
         ref_path = lambda w: os.path.join(config["paths"]["ref_alignment_dir"], f"{w.gene}.fasta"),
         mafft_opts = config["params"]["mafft"]["alignment_option"]
     output:
-        aln_ref = temp(f"{{RESULTS_DIR}}/06_alignment/{{type}}/aligned/{{gene}}_with_ref.aln")
+        aln_ref = temp(f"{RESULTS_DIR}/06_alignment/{{type}}/aligned/{{gene}}_with_ref.aln")
     threads: 4
     log: "logs/6-2/mafft_{type}_{gene}.log"
     shell:
@@ -60,10 +60,10 @@ rule mafft_alignment:
 rule filter_alignment:
     input:
         # MAFFT result (Ref included)
-        aln_ref = f"{{RESULTS_DIR}}/06_alignment/{{type}}/aligned/{{gene}}_with_ref.aln"
+        aln_ref = f"{RESULTS_DIR}/06_alignment/{{type}}/aligned/{{gene}}_with_ref.aln"
     output:
         # Final alignment file (Ref removed)
-        aln_final = temp(f"{{RESULTS_DIR}}/06_alignment/{{type}}/temp_aligned/{{gene}}.aln")
+        aln_final = temp(f"{RESULTS_DIR}/06_alignment/{{type}}/temp_aligned/{{gene}}.aln")
     params:
         # Pass my sample list
         samples = lambda w: " ".join(SAMPLES)
@@ -85,9 +85,9 @@ rule filter_alignment:
 rule trimal_trimming:
     input:
         # Input file after filtering
-        aln = f"{{RESULTS_DIR}}/06_alignment/{{type}}/temp_aligned/{{gene}}.aln"
+        aln = f"{RESULTS_DIR}/06_alignment/{{type}}/temp_aligned/{{gene}}.aln"
     output:
-        trimmed = f"{{RESULTS_DIR}}/06_alignment/{{type}}/trimmed/{{gene}}.trimmed.aln"
+        trimmed = f"{RESULTS_DIR}/06_alignment/{{type}}/trimmed/{{gene}}.trimmed.aln"
     params:
         trimal_opts = config["params"]["trimal"]
     log: "logs/6-4/trimal_{type}_{gene}.log"
