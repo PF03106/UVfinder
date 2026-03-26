@@ -48,7 +48,7 @@ rule blast_search:
 rule partition_blast_results:
     input:
         blast = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/{{sample_id}}_blast_results.txt",
-        sex_map = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv"
+        sex_map = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv",
         overlap_threshold = config["params"].get("overlap_threshold", 0.5)
     output:
         best_tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/B_Best_hits.tsv",
