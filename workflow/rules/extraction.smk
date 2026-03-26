@@ -1,23 +1,26 @@
-# Phase 5: Extract Sequences (Best & All)
+# workflow/rules/goflag_blast_locus_search.smk
+# Extract sequences for goflag probes from BLAST results with flanking regions set by users.
+
+RESULTS_DIR = config["paths"]["results"]    # path for output files (result directory)
 
 # 1. Extract Best Hits
 rule extract_best_sequences:
     input:
-        tsv = "results/03_locus_search/{s}/B_Best_hits.tsv",
-        genome = "results/00_renamed/{s}_renamed.fasta",
-        loci_list = "results/04_filtered/all_sex_linked_genes.txt"
+        tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/B_Best_hits.tsv",
+        genome = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_renamed.fasta",
+        loci_list = f"{RESULTS_DIR}/04_filtered/{{sample_id}}_all_sex_linked_genes.txt"
     output:
-        out_dir = directory("results/05_extracted/{s}/Best")
+        out_dir = directory(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/Best")
     params:
-        sample = "{s}",
+        sample = "{sample_id}",
         # Get values from config (use default if not set)
         flank = config.get("flanking_bp", 20),
         # Best hits only have 1 record, but for code compatibility we use max_hits parameter
         max_hits = config.get("max_blast_hits", 10)
-    log: "logs/5_best/extract_best_{s}.log"
+    log: "logs/5_best/extract_best_{sample_id}.log"
     shell:
         """
-        python3 workflow/scripts/extract_from_tsv.py \
+        python3 workflow/scripts/extract_sex_linked_with_flanks.py \
             --tsv {input.tsv} \
             --genome {input.genome} \
             --loci_list {input.loci_list} \
@@ -31,19 +34,19 @@ rule extract_best_sequences:
 # 2. Extract All Hits
 rule extract_all_sequences:
     input:
-        tsv = "results/03_locus_search/{s}/A_All_hits.tsv",
-        genome = "results/00_renamed/{s}_renamed.fasta",
-        loci_list = "results/04_filtered/all_sex_linked_genes.txt"
+        tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/A_All_hits.tsv",
+        genome = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_renamed.fasta",
+        loci_list = f"{RESULTS_DIR}/04_filtered/{{sample_id}}_all_sex_linked_genes.txt"
     output:
-        out_dir = directory("results/05_extracted/{s}/All")
+        out_dir = directory(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/All")
     params:
-        sample = "{s}",
+        sample = "{sample_id}",
         flank = config.get("flanking_bp", 20),
         max_hits = config.get("max_blast_hits", 10)
-    log: "logs/5_all/extract_all_{s}.log"
+    log: "logs/5_all/extract_all_{sample_id}.log"
     shell:
         """
-        python3 workflow/scripts/extract_from_tsv.py \
+        python3 workflow/scripts/extract_sex_linked_with_flanks.py \
             --tsv {input.tsv} \
             --genome {input.genome} \
             --loci_list {input.loci_list} \
