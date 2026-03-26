@@ -1,6 +1,7 @@
 import pandas as pd
 
 configfile: "config/config.yaml"
+RESULTS_DIR = config["paths"]["results"]
 
 # 1. read config/samples.tsv
 samples_df = pd.read_csv("config/samples.tsv", sep="\t").set_index("sample_id", drop=False)
@@ -8,10 +9,11 @@ samples_df = pd.read_csv("config/samples.tsv", sep="\t").set_index("sample_id", 
 # 2. make sample_id list
 SAMPLES = samples_df["sample_id"].tolist()
 
-def get_phylogeny_targets(wildcards):
+# 3. Define dynamic targets for phylogeny and visualization
+def get_dynamic_targets(wildcards):
     """
     Wait until checkpoint (Phase 4) is completed,
-    read the generated interesting_loci.txt and return the final tree file list.
+    read the generated all_sex_linked_genes.txt and return the final tree & viz file lists.
     """
     # 1. Get checkpoint output file (wait for Phase 4 completion)
     checkpoint_output = checkpoints.select_sex_linked_loci.get(**wildcards).output.out_list
@@ -20,49 +22,46 @@ def get_phylogeny_targets(wildcards):
     with open(checkpoint_output) as f:
         genes = [line.strip() for line in f if line.strip()]
         
-    # 3. Return Trimmed Alignment file paths for Best and All types
-    return expand("results/07_phylogeny/{type}/{gene}.treefile", 
-                  type=["Best", "All"], 
-                  gene=genes)
-
-def get_viz_targets(wildcards):
-    checkpoint_output = checkpoints.select_sex_linked_loci.get(**wildcards).output.out_list
+    # 3. Return Trimmed Alignment file paths (Trees) + Visualization paths
+    trees = expand(f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}.treefile", 
+                   type=["Best", "All"], 
+                   gene=genes)
     
-    with open(checkpoint_output) as f:
-        genes = [line.strip() for line in f if line.strip()]
-
-    return expand("results/07_phylogeny/Best/{gene}_viz.png", gene=genes)
+    viz = expand(f"{RESULTS_DIR}/07_phylogeny/Best/{{gene}}_viz.png", 
+                 gene=genes)
+                 
+    # Combine and return both target lists
+    return trees + viz
 
 # 4. Rule all
 rule all:
     input:
         # Phase 1.1: renamed files
-        expand("results/00_renamed/{s}_renamed.fasta", s=SAMPLES),
+        expand(f"{RESULTS_DIR}/00_renamed/{{s}}_renamed.fasta", s=SAMPLES),
         # Phase 1.1: rename mapping files
-        expand("results/00_renamed/{s}_mapping.tsv", s=SAMPLES),
+        expand(f"{RESULTS_DIR}/00_renamed/{{s}}_mapping.tsv", s=SAMPLES),
         # Phase 1.2: results for BLAST DB
-        expand("results/01_blastdb/{s}_renamed.nhr", s=SAMPLES),
+        expand(f"{RESULTS_DIR}/01_blastdb/{{s}}_renamed.nhr", s=SAMPLES),
         # Phase 2.1: blast sex markers and ID the renamed genomes
-        expand("results/02_sex_id/{s}_sex_assignment.tsv", s=SAMPLES),
-        "results/02_sex_id/all_samples_sex_assignment.tsv",
+        expand(f"{RESULTS_DIR}/02_sex_id/{{s}}_sex_assignment.tsv", s=SAMPLES),
+        f"{RESULTS_DIR}/02_sex_id/all_samples_sex_assignment.tsv",
         # Phase 3: blast goflag probes and Tag "sex type" and extract All/Best Hits.
-        expand("results/03_locus_search/{s}/A_All_hits.tsv",s=SAMPLES),
-        expand("results/03_locus_search/{s}/B_Best_hits.tsv", s=SAMPLES),
+        expand(f"{RESULTS_DIR}/03_locus_search/{{s}}/A_All_hits.tsv", s=SAMPLES),
+        expand(f"{RESULTS_DIR}/03_locus_search/{{s}}/B_Best_hits.tsv", s=SAMPLES),
         # Phase 4: select loci that are sex linked and qc
-        "results/04_filtered/all_sex_linked_genes.txt",
-        "results/04_filtered/sex_linked_summary_by_order.tsv",
+        f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt",
+        f"{RESULTS_DIR}/04_filtered/sex_linked_summary_by_order.tsv",
         # Phase 5: Extract sequences
-        expand("results/05_extracted/{s}/Best", s=SAMPLES),
-        expand("results/05_extracted/{s}/All", s=SAMPLES),
-        # Phase 6 & 7: MSA, TrimAL and IQTree
-        get_phylogeny_targets,
-        get_viz_targets
+        expand(f"{RESULTS_DIR}/05_extracted/{{s}}/Best", s=SAMPLES),
+        expand(f"{RESULTS_DIR}/05_extracted/{{s}}/All", s=SAMPLES),
+        # Phase 6 & 7: MSA, TrimAL, IQTree, and Viz (dynamic targets)
+        get_dynamic_targets
 
 
-include: "rules/preprocessing.smk"
-include: "rules/sex_id.smk"
-include: "rules/blast_goflag_probes.smk"
-include: "rules/filtering_loci.smk"
-include: "rules/extraction.smk"
-include: "rules/alignment.smk"
-include: "rules/phylogeny.smk"
+include: "rules/01_preprocess.smk"
+include: "rules/02_assign_sex.smk"
+include: "rules/03_blast_goflag_probes.smk"
+include: "rules/04_filter_sex_linked.smk"
+include: "rules/05_extract_seqs.smk"
+include: "rules/06_align_trim.smk"
+include: "rules/07_phylogeny.smk"
