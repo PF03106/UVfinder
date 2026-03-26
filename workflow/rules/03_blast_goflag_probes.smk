@@ -25,21 +25,24 @@ rule prepare_order_probes:
 # 2. Run BLAST with custom probes
 rule blast_search:
     input:
-        genome = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_renamed.fasta",
+        db_file = f"{RESULTS_DIR}/01_blastdb/{{sample_id}}_renamed.nhr",
         query = "resources/probes_by_sample/{sample_id}_specific_probes.fasta"
     output:
         blast_out = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/{{sample_id}}_blast_results.txt"
     params:
+        db_prefix = f"{RESULTS_DIR}/01_blastdb/{{sample_id}}_renamed",
         evalue = config["params"]["query_blast_evalue"],
         outfmt = "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore"
+    threads: 8
     log: f"logs/3-2/blast_{{sample_id}}.log"
     shell:
         """
         tblastn \
             -query {input.query} \
-            -subject {input.genome} \
+            -db {params.db_prefix} \
             -evalue {params.evalue} \
             -outfmt "{params.outfmt}" \
+            -num_threads {threads} \
             -out {output.blast_out} \
             2> {log}
         """
