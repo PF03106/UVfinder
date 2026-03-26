@@ -1,4 +1,4 @@
-# workflow/rules/goflag_blast_locus_search.smk
+# workflow/rules/05_extract_seqs.smk
 # Extract sequences for goflag probes from BLAST results with flanking regions set by users.
 
 RESULTS_DIR = config["paths"]["results"]    # path for output files (result directory)
