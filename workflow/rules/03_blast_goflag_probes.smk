@@ -62,6 +62,6 @@ rule partition_blast_results:
             --sex_map {input.sex_map} \
             --out_best {output.best_tsv} \
             --out_all {output.all_tsv} \
-            --overlap_threshold {input.overlap_threshold} \
+            --overlap_threshold {params.overlap_threshold} \
             > {log} 2>&1
         """
