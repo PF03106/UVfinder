@@ -11,10 +11,10 @@ library(data.table)
 # -------------------------------
 # 1. Set path
 # -------------------------------
-genome_base <- "results/00_renamed"
-blast_base <- "results/03_locus_search"
-meta_file <- "config/samples.tsv"
-out_dir <- "results/test_chromomap"
+genome_base <- "/blue/mcdaniel/seyeonkim/UVfinder/results/00_renamed"
+blast_base <- "/blue/mcdaniel/seyeonkim/UVfinder/results/03_locus_search"
+meta_file <- "/blue/mcdaniel/seyeonkim/UVfinder/config/samples.tsv"
+out_dir <- "/blue/mcdaniel/seyeonkim/UVfinder/results/polytricales_chromomap"
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # -------------------------------
@@ -28,7 +28,7 @@ option_list = list(
   make_option(c("-t", "--target"), type="character", default=NULL, 
               help=" If mode is set to 'order' or 'sample_id', target name (e.g. Dicriales or S001, S002, ... sep = , ", metavar="character"),
   make_option(c("-b", "--blast_type"), type="character", default="best_hits", 
-              help=" Choose between best_hit and all_hits", metavar="character")
+              help=" Choose between best_hits and all_hits", metavar="character")
 )
 
 opt_parser = OptionParser(option_list=option_list)
@@ -42,9 +42,11 @@ if (is.null(opt$genes)){
 # -------------------------------
 # 3. Sex linked gene list (for red color) and target sample list preparation
 # -------------------------------
-# Sex linked gene list (color = red)
-sex_lniked_genes <- readLines(opt$genes)
-sex_lniked_genes <- sex_lniked_genes[sex_lniked_genes != ""]
+# Read and perfectly clean the sex-linked gene list (remove hidden '\r' and whitespaces)
+sex_linked_genes <- readLines(opt$genes)
+sex_linked_genes <- unlist(strsplit(sex_linked_genes, ","))
+sex_linked_genes <- trimws(sex_linked_genes)
+sex_linked_genes <- sex_linked_genes[sex_linked_genes != ""]
 
 meta_df <- read.table(meta_file, header=TRUE, sep="\t", stringsAsFactors=FALSE)
 target_samples <- c()   # This will be the species to visualize in chromoMap
@@ -81,6 +83,7 @@ for (sample in target_samples) {
     message("❌ [ERROR] Reference genome file not found for sample: ", ref_fa, " -> skipping sample.")
     next
   }
+  
   # create chrlen_map and chrom_file.
   ref <- readDNAStringSet(ref_fa)
   chrlen_map <- setNames(width(ref), names(ref))
@@ -111,6 +114,7 @@ for (sample in target_samples) {
       probe = qseqid
     )
   }
+  
   # -------------------------------
   # 5. Prepare annotation file for chromoMap (probe locations)
   # -------------------------------
@@ -121,7 +125,8 @@ for (sample in target_samples) {
       ChromosomeName = sseqid,
       Start          = as.integer(start),
       End            = as.integer(end),
-      Category       = ifelse(sub("\\|.*", "", probe) %in% sex_lniked_genes, "1_Target", "2_Other")
+      # Safely extract and trim the probe name before checking against the gene list
+      Category       = ifelse(trimws(sub("\\|.*", "", probe)) %in% sex_linked_genes, "1_Target", "2_Other")
     ) %>% 
     filter(ChromosomeName %in% names(chrlen_map))
 
@@ -133,17 +138,16 @@ for (sample in target_samples) {
   annot_file <- file.path(out_dir, paste0(sample, "_annotation.txt"))
   write_tsv(annot_df, annot_file, col_names = FALSE)
   
-  present_categories <- sort(unique(annot_df$Category))
-  ordered_categories <- unique(annot_df$Category)
+  # Dynamically assign colors based on strictly alphabetical present categories
+  # chromoMap assigns colors strictly by the alphabetical order of the categories!
+  present_categories <- unique(annot_df$Category)
   
-  sample_colors <- c()
-  for (cat in ordered_categories) {
-    if (cat == "1_Target") {
-      sample_colors <- c(sample_colors, "#FF0066")
-    } else if (cat == "2_Other") {
-      sample_colors <- c(sample_colors, "#0099CC")
-    }
-  }
+  # Pre-define color palette
+  color_map <- c("1_Target" = "#FF0066", "2_Other" = "#0099CC")
+  
+  # Extract correct colors for the categories actually present in this sample
+  sample_colors <- unname(color_map[present_categories])
+  
   # -------------------------------
   # 6. Visualize with chromoMap and save svg
   # -------------------------------
