@@ -44,7 +44,7 @@ rule assign_sex_differential:
         female_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_female.tblastn"
     output: tsv = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv"
     params:
-        min_bit_score_UV = config["params"]["min_bit_score_UV"]
+        min_bitscore_ratio_UV = config["params"]["min_bitscore_ratio_UV"]
     log: f"logs/2-2/assign_sex_{{sample_id}}.log"
     shell:
         """
@@ -52,7 +52,7 @@ rule assign_sex_differential:
             --male {input.male_res} \
             --female {input.female_res} \
             --output {output.tsv} \
-            --min_bit_score_UV {params.min_bitscore_UV} > {log} 2>&1
+            --min_bitscore_ratio_UV {params.min_bitscore_ratio_UV} > {log} 2>&1
         """
 
 # Aggregate all the result from sex_sgginment.tsv

@@ -3,7 +3,7 @@ import pandas as pd
 import argparse
 import os
 
-def get_best_score(file_path, min_bitscore_ratio):
+def get_best_score(file_path, min_bitscore_ratio_UV):
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return None, 0
     
@@ -23,7 +23,7 @@ def get_best_score(file_path, min_bitscore_ratio):
     absolute_max = df['bitscore'].max()
 
     # 1. Filter hits that are >= N% (e.g., 80%) of the absolute maximum bitscore
-    filtered = df[df['bitscore'] >= (absolute_max * min_bitscore_ratio)]
+    filtered = df[df['bitscore'] >= (absolute_max * min_bitscore_ratio_UV)]
     
     # 2. Keep only hits that match the formal Chromosome (Chr) naming convention
     filtered = filtered[filtered['sseqid'].str.contains(r'Chr(\d{1,2}|[a-zA-Z])$', regex=True, na=False)]
@@ -41,11 +41,11 @@ def main():
     parser.add_argument("--female", required=True)
     parser.add_argument("--output", required=True)
     # Bitscore ratio threshold (default 0.8)
-    parser.add_argument("--min_bitscore_ratio", type=float, default=0.8)
+    parser.add_argument("--min_bitscore_ratio_UV", type=float, default=0.8)
     args = parser.parse_args()
 
-    m_contig, m_score = get_best_score(args.male, args.min_bitscore_ratio)
-    f_contig, f_score = get_best_score(args.female, args.min_bitscore_ratio)
+    m_contig, m_score = get_best_score(args.male, args.min_bitscore_ratio_UV)
+    f_contig, f_score = get_best_score(args.female, args.min_bitscore_ratio_UV)
 
     # Sex identification logic (Determine U/V)
     if m_score > f_score:
