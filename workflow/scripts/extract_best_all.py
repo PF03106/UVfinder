@@ -7,9 +7,7 @@ def parse_chrom_id(header_string):
     """
     Extract the chromosome identifier (digit 1-2 or single letter) after 'Chr'.
     e.g., 'scaffold_Chr1' -> '1', 'ChrU' -> 'U'
-    Uses a capturing group (\d{1,2}|[a-zA-Z]) to avoid IndexError.
     """
-    # Pattern looks for 'Chr' followed by 1-2 digits OR a single letter at the end of the string
     match = re.search(r'Chr(\d{1,2}|[a-zA-Z])$', str(header_string), re.IGNORECASE)
     if match:
         return match.group(1).strip()
@@ -43,7 +41,7 @@ def load_sex_map(file_path):
                 mapping[c_id] = 'U'
             elif sex == 'V': 
                 mapping[c_id] = 'V'
-            
+                
     except Exception as e:
         print(f"Warning loading sex map: {e}")
         default_tag = 'N'
@@ -74,36 +72,61 @@ def is_overlapping(start1, end1, start2, end2, threshold=0.5):
     
     return False
 
-def partition_blast(blast_file, sex_map_file, out_best, out_all, overlap_threshold):
+def partition_blast(blast_file, sex_map_file, out_best, out_all, overlap_threshold, min_pident, min_bitscore_ratio):
     """
-    Main logic to tag BLAST hits and partition them into Best and All hits.
+    Main logic to tag BLAST hits, filter by pident & bitscore ratio, and partition them.
     """
     os.makedirs(os.path.dirname(out_best), exist_ok=True)
     os.makedirs(os.path.dirname(out_all), exist_ok=True)
 
     cols = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", 
             "qstart", "qend", "sstart", "send", "evalue", "bitscore"]
+    out_cols = cols + ['rank', 'sex_tag']
     
-    if not os.path.exists(blast_file) or os.path.getsize(blast_file) == 0:
-        empty_df = pd.DataFrame(columns=cols+['rank', 'sex_tag'])
+    # Helper function for empty outputs
+    def save_empty():
+        empty_df = pd.DataFrame(columns=out_cols)
         empty_df.to_csv(out_best, sep='\t', index=False)
         empty_df.to_csv(out_all, sep='\t', index=False)
+
+    if not os.path.exists(blast_file) or os.path.getsize(blast_file) == 0:
+        save_empty()
         return
 
     # 1. Load BLAST Results
     df = pd.read_csv(blast_file, sep='\t', names=cols, usecols=range(12))
     
-    # 2. Extract clean Locus ID and sort by quality
+    if df.empty:
+        save_empty()
+        return
+
+    # 2. Extract Locus ID
     df['locus_temp'] = df['qseqid'].apply(lambda x: str(x).split('|')[0])
+
+    # 3. Filtering logic
+    # A. Absolute filtering: keep hits with pident >= min_pident
+    df = df[df['pident'] >= min_pident]
+
+    if not df.empty:
+        # B. Relative filtering: keep hits with bitscore >= (max_bitscore of the locus * min_bitscore_ratio)
+        max_bitscores = df.groupby('locus_temp')['bitscore'].transform('max')
+        df = df[df['bitscore'] >= (max_bitscores * min_bitscore_ratio)]
+
+    # Check if dataframe is empty after filtering
+    if df.empty:
+        save_empty()
+        return
+
+    # 4. Sort remaining hits by quality
     df = df.sort_values(by=['locus_temp', 'evalue', 'bitscore'], ascending=[True, True, False])
     
-    # 3. Load Sex Map (Unpack the tuple)
+    # 5. Load Sex Map
     sex_map, default_tag = load_sex_map(sex_map_file) 
     
     best_rows = []
     all_rows = [] 
     
-    # 4. Process each locus
+    # 6. Process each locus
     for locus, group in df.groupby('locus_temp', sort=False):
         
         # --- Handle Best Hit ---
@@ -133,26 +156,33 @@ def partition_blast(blast_file, sex_map_file, out_best, out_all, overlap_thresho
                 row_dict = row.to_dict()
                 chrom_id = parse_chrom_id(chrom)
                 
-                # Tag hit: either U/V from map or default_tag (A/N)
                 row_dict['sex_tag'] = sex_map.get(chrom_id, default_tag)
                 row_dict['rank'] = current_rank
                 
                 if 'locus_temp' in row_dict: del row_dict['locus_temp']
                 all_rows.append(row_dict)
                 current_rank += 1
-            
-    # 5. Save Results
-    out_cols = cols + ['rank', 'sex_tag']
+                
+    # 7. Save Results
     pd.DataFrame(best_rows)[out_cols].to_csv(out_best, sep='\t', index=False) if best_rows else pd.DataFrame(columns=out_cols).to_csv(out_best, sep='\t', index=False)
     pd.DataFrame(all_rows)[out_cols].to_csv(out_all, sep='\t', index=False) if all_rows else pd.DataFrame(columns=out_cols).to_csv(out_all, sep='\t', index=False)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tag BLAST hits with sex information and filter overlaps.")
+    parser = argparse.ArgumentParser(description="Tag BLAST hits, filter by pident & bitscore ratio, and remove overlaps.")
     parser.add_argument("--blast", required=True, help="Input BLAST result file (tsv)")
     parser.add_argument("--sex_map", required=True, help="Input sex assignment file (tsv)")
     parser.add_argument("--out_best", required=True, help="Output path for best hits per locus")
     parser.add_argument("--out_all", required=True, help="Output path for all non-redundant hits")
     parser.add_argument("--overlap_threshold", type=float, default=0.5, help="Threshold for overlapping BLAST hits (0.0 to 1.0)")
-    args = parser.parse_args()
-    
-    partition_blast(args.blast, args.sex_map, args.out_best, args.out_all, overlap_threshold=args.overlap_threshold)
+    parser.add_argument("--min_pident", type=float, default=70.0, help="Minimum percent identity to keep a hit (e.g., 70.0 %)")
+    parser.add_argument("--min_bitscore_ratio", type=float, default=0.8, help="Minimum bitscore ratio compared to the best hit of the same locus (e.g., 0.8)(Goflag)")
+     
+    partition_blast(
+        args.blast, 
+        args.sex_map, 
+        args.out_best, 
+        args.out_all, 
+        overlap_threshold=args.overlap_threshold,
+        min_pident=args.min_pident,
+        min_bitscore_ratio=args.min_bitscore_ratio
+    )
