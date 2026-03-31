@@ -13,7 +13,11 @@ rule blast_male:
     log: f"logs/2-1/blast_male_{{sample_id}}.log"
     shell: 
         """
-        tblastn -query {input.query} -db {params.db_prefix} -evalue {params.evalue} -outfmt '6 std qlen' -out {output} > {log} 2>&1
+        tblastn \
+        -query {input.query} \
+        -db {params.db_prefix} \
+        -evalue {params.evalue} \
+        -outfmt '6 std qlen' -out {output} > {log} 2>&1
         """
 
 # BLAST for female markers
@@ -26,7 +30,11 @@ rule blast_female:
     log: f"logs/2-1/blast_female_{{sample_id}}.log"
     shell: 
         """
-        tblastn -query {input.query} -db {params.db_prefix} -evalue {params.evalue} -outfmt '6 std qlen' -out {output} > {log} 2>&1
+        tblastn \
+        -query {input.query} \
+        -db {params.db_prefix} \
+        -evalue {params.evalue} \
+        -outfmt '6 std qlen' -out {output} > {log} 2>&1
         """
 
 # ID U or V or Unknown
@@ -36,8 +44,7 @@ rule assign_sex_differential:
         female_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_female.tblastn"
     output: tsv = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv"
     params:
-        min_cov_UV = config["params"]["min_coverage_UV"],
-        max_evalue = config["params"]["uv_blast_evalue"]
+        min_bit_score_UV = config["params"]["min_bit_score_UV"]
     log: f"logs/2-2/assign_sex_{{sample_id}}.log"
     shell:
         """
@@ -45,8 +52,7 @@ rule assign_sex_differential:
             --male {input.male_res} \
             --female {input.female_res} \
             --output {output.tsv} \
-            --min_cov {params.min_cov_UV} \
-            --max_evalue {params.max_evalue} > {log} 2>&1
+            --min_bit_score_UV {params.min_bitscore_UV} > {log} 2>&1
         """
 
 # Aggregate all the result from sex_sgginment.tsv
