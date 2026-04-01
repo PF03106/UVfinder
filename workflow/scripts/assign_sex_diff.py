@@ -12,7 +12,7 @@ def get_best_score(file_path, min_bitscore_ratio_UV):
             "qstart", "qend", "sstart", "send", "evalue", "bitscore"]
     
     try:
-        df = pd.read_csv(file_path, sep='\t', names=cols)
+        df = pd.read_csv(file_path, sep='\t', names=cols, dtype={'sseqid': str})
     except pd.errors.EmptyDataError:
         return None, 0
 

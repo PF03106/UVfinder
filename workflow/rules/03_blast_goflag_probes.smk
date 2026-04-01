@@ -37,6 +37,7 @@ rule blast_search:
     log: f"logs/3-2/blast_{{sample_id}}.log"
     shell:
         """
+        echo "[$(date)] Starting BLAST search for {wildcards.sample_id}..." > {log}
         tblastn \
             -query {input.query} \
             -db {params.db_prefix} \
@@ -44,7 +45,8 @@ rule blast_search:
             -outfmt "{params.outfmt}" \
             -num_threads {threads} \
             -out {output.blast_out} \
-            2> {log}
+            >> {log} 2>&1
+        echo "[$(date)] Finished BLAST search for {wildcards.sample_id}." >> {log}
         """
 
 # 3. Partition BLAST results into All hits and Best hits. 

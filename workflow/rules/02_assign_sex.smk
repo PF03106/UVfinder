@@ -30,11 +30,14 @@ rule blast_female:
     log: f"logs/2-1/blast_female_{{sample_id}}.log"
     shell: 
         """
+        echo "[$(date)] Starting BLAST search for {wildcards.sample_id}..." > {log}
         tblastn \
         -query {input.query} \
         -db {params.db_prefix} \
         -evalue {params.evalue} \
-        -outfmt '6 std qlen' -out {output} > {log} 2>&1
+        -outfmt '6 std qlen' -out {output} \
+        >> {log} 2>&1
+        echo "[$(date)] Finished BLAST search for {wildcards.sample_id}." >> {log}
         """
 
 # ID U or V or Unknown
