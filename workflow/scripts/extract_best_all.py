@@ -176,7 +176,9 @@ if __name__ == "__main__":
     parser.add_argument("--overlap_threshold", type=float, default=0.5, help="Threshold for overlapping BLAST hits (0.0 to 1.0)")
     parser.add_argument("--min_pident", type=float, default=70.0, help="Minimum percent identity to keep a hit (e.g., 70.0 %)")
     parser.add_argument("--min_bitscore_ratio", type=float, default=0.8, help="Minimum bitscore ratio compared to the best hit of the same locus (e.g., 0.8)(Goflag)")
-     
+    
+    args = parser.parse_args()
+    
     partition_blast(
         args.blast, 
         args.sex_map, 
