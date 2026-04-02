@@ -21,15 +21,22 @@ def get_best_score(file_path, min_bitscore_ratio_UV):
 
     # Calculate the absolute maximum bitscore in the entire file
     absolute_max = df['bitscore'].max()
+    cutoff = absolute_max * min_bitscore_ratio_UV
+    
+    print(f"Processing {file_path}: Absolute Max Bitscore = {absolute_max}, Cutoff = {cutoff}")
 
     # 1. Filter hits that are >= N% (e.g., 80%) of the absolute maximum bitscore
-    filtered = df[df['bitscore'] >= (absolute_max * min_bitscore_ratio_UV)]
+    filtered = df[df['bitscore'] >= cutoff]
     
     # 2. Keep only hits that match the formal Chromosome (Chr) naming convention
     filtered = filtered[filtered['sseqid'].str.contains(r'Chr(\d{1,2}|[a-zA-Z])$', regex=True, na=False)]
     
     if filtered.empty:
+        print(f"No hits passed the filtering criteria for {file_path}.")
         return None, 0
+    else:
+        print(f"{len(filtered)} hits passed the filtering criteria for {file_path}.")
+        print(filtered[['sseqid', 'bitscore']])
     
     # 3. Return the top hit with the highest bitscore among the filtered Chr hits
     best = filtered.sort_values(by='bitscore', ascending=False).iloc[0]
