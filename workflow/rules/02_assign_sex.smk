@@ -17,7 +17,7 @@ rule blast_male:
         -query {input.query} \
         -db {params.db_prefix} \
         -evalue {params.evalue} \
-        -outfmt '6 std qlen' -out {output} > {log} 2>&1
+        -outfmt '6 std' -out {output} > {log} 2>&1
         """
 
 # BLAST for female markers
@@ -35,7 +35,7 @@ rule blast_female:
         -query {input.query} \
         -db {params.db_prefix} \
         -evalue {params.evalue} \
-        -outfmt '6 std qlen' -out {output} \
+        -outfmt '6 std' -out {output} \
         >> {log} 2>&1
         echo "[$(date)] Finished BLAST search for {wildcards.sample_id}." >> {log}
         """
