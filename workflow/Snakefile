@@ -24,7 +24,7 @@ def get_dynamic_targets(wildcards):
         
     # 3. Return Trimmed Alignment file paths (Trees) + Visualization paths
     trees = expand(f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}.treefile", 
-                   type=["Best", "All"], 
+                   type=["Best", "All", "Not_sex_linked"], 
                    gene=genes)
     
     viz = expand(f"{RESULTS_DIR}/07_phylogeny/Best/{{gene}}_viz.png", 

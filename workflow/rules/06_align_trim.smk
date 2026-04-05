@@ -6,7 +6,7 @@ RESULTS_DIR = config["paths"]["results"]    # path for output files (result dire
 # Rule 1: Gather Sequences
 rule gather_sequences:
     input:
-        extracted_dirs = expand(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/{{type}}", sample_id=SAMPLES, type=["Best", "All"]),
+        extracted_dirs = expand(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/{{type}}", sample_id=SAMPLES, type=["Best", "All", "Not_sex_linked"]),
         gene_list = f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt"
     output:
         merged = f"{RESULTS_DIR}/06_alignment/{{type}}/merged/{{gene}}.fasta"
