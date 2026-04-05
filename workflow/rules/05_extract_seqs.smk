@@ -57,7 +57,7 @@ rule extract_all_sequences:
         """
 
 # 3. Extract Autosomal Hits (Non-target, genes that are not in all_sex_linked_genes.txt)
-rule extract_best_nontarget_sequences:
+rule extract_not_sex_linked_sequences:
     input:
         tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/B_Best_hits.tsv",
         genome = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_renamed.fasta",

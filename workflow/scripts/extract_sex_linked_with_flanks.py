@@ -119,7 +119,7 @@ if __name__ == "__main__":
     # Parameters to be received from Config
     parser.add_argument("--flank", type=int, default=20, help="Flanking bp")
     parser.add_argument("--max_hits", type=int, default=10, help="Max hits per gene")
-    parser.add_argument("--exclude", action="store_true", help="Extract sequences NOT in the loci list")
+    parser.add_argument("--exclude", action="store_true", help="Extract sequences NOT in the sex-linked gene list")
     
     args = parser.parse_args()
     
