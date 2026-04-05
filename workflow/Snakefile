@@ -22,16 +22,13 @@ def get_dynamic_targets(wildcards):
     with open(checkpoint_output) as f:
         genes = [line.strip() for line in f if line.strip()]
         
-    # 3. Return Trimmed Alignment file paths (Trees) + Visualization paths
+    # 3. Return Trimmed Alignment file paths (Trees)
     trees = expand(f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}.treefile", 
                    type=["Best", "All", "Not_sex_linked"], 
                    gene=genes)
-    
-    viz = expand(f"{RESULTS_DIR}/07_phylogeny/Best/{{gene}}_viz.png", 
-                 gene=genes)
                  
     # Combine and return both target lists
-    return trees + viz
+    return trees
 
 # 4. Rule all
 rule all:
