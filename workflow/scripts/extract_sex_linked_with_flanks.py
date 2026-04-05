@@ -7,14 +7,14 @@ from Bio.SeqRecord import SeqRecord
 import argparse
 import os
 
-def extract_sequences(tsv_file, genome_file, loci_list_file, output_dir, sample_id, flank_bp, max_hits):
+def extract_sequences(tsv_file, genome_file, loci_list_file, output_dir, sample_id, flank_bp, max_hits, exclude_mode):
     print(f"--- Extracting sequences for {sample_id} ---")
-    print(f"    (Parameters: Flank={flank_bp}bp, Max Hits={max_hits})")
+    print(f"    (Parameters: Flank={flank_bp}bp, Max Hits={max_hits}, Exclude Mode={exclude_mode})")
 
     # Create output directory first to prevent Snakemake MissingOutputException
     os.makedirs(output_dir, exist_ok=True)
 
-    # 1. Load Target Loci List
+    # 1. Load Sex-linked Loci List
     if not os.path.exists(loci_list_file) or os.path.getsize(loci_list_file) == 0:
         print("⚠️ Warning: Loci list file is missing or empty. Exiting safely.")
         return
@@ -27,7 +27,7 @@ def extract_sequences(tsv_file, genome_file, loci_list_file, output_dir, sample_
         print("⚠️ Warning: BLAST TSV file is missing or empty. Exiting safely.")
         return
 
-    # 4. Load TSV first (to check if there's anything to do before loading genome index)
+    # 4. Load TSV first
     df = pd.read_csv(tsv_file, sep='\t')
     if df.empty:
         print("⚠️ Warning: BLAST TSV is empty (only headers). Exiting safely.")
@@ -35,11 +35,18 @@ def extract_sequences(tsv_file, genome_file, loci_list_file, output_dir, sample_
         
     df['clean_locus'] = df['qseqid'].apply(lambda x: str(x).split('|')[0])
     
-    # Filter targets
-    df = df[df['clean_locus'].isin(target_loci)]
+    # Filter sex-linked loci or autosomal loci based on exclude_mode
+    if exclude_mode:
+        # leave only those NOT in target_loci
+        df = df[~df['clean_locus'].isin(target_loci)]
+        print(f"Extract these loci (not sex-linked): {set(df['clean_locus'].unique())}")
+    else:
+        # leave only those in target_loci
+        df = df[df['clean_locus'].isin(target_loci)]
+        print(f"Extract these loci (sex-linked): {set(df['clean_locus'].unique())}")
     
     if df.empty:
-        print("⚠️ Warning: No target loci matched in the BLAST results. Exiting safely.")
+        print("⚠️ Warning: No matching loci found after filtering. Exiting safely.")
         return
 
     extracted_count = 0
@@ -48,16 +55,14 @@ def extract_sequences(tsv_file, genome_file, loci_list_file, output_dir, sample_
     try:
         genome_index = SeqIO.index(genome_file, "fasta")
         
-        # 5. Extract Sequence per Gene
+        # 4. Extract Sequence per Gene
         for locus, group in df.groupby('clean_locus'):
             records = []
             
-            # Sort by rank (process from rank 1 first)
             sorted_group = group.sort_values('rank')
             hits_processed = 0
             
             for _, row in sorted_group.iterrows():
-                # Stop extracting if hit count limit is reached
                 if hits_processed >= max_hits:
                     break
                     
@@ -65,7 +70,6 @@ def extract_sequences(tsv_file, genome_file, loci_list_file, output_dir, sample_
                 if sseqid not in genome_index: 
                     continue
                 
-                # Fetch only the needed sequence (lazy loading)
                 seq_record = genome_index[sseqid]
                 full_seq = seq_record.seq
                 chrom_len = len(full_seq)
@@ -115,8 +119,9 @@ if __name__ == "__main__":
     # Parameters to be received from Config
     parser.add_argument("--flank", type=int, default=20, help="Flanking bp")
     parser.add_argument("--max_hits", type=int, default=10, help="Max hits per gene")
+    parser.add_argument("--exclude", action="store_true", help="Extract sequences NOT in the loci list")
     
     args = parser.parse_args()
     
     extract_sequences(args.tsv, args.genome, args.loci_list, args.out_dir, 
-                      args.sample, args.flank, args.max_hits)
+                      args.sample, args.flank, args.max_hits, args.exclude)
