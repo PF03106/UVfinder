@@ -61,7 +61,7 @@ rule extract_not_sex_linked_sequences:
     input:
         tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/B_Best_hits.tsv",
         genome = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_renamed.fasta",
-        loci_list = f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt"
+        loci_list = f"{RESULTS_DIR}/04_filtered/not_sex_linked_genes.txt"
     output:
         out_dir = directory(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/Not_sex_linked")
     params:
@@ -79,6 +79,5 @@ rule extract_not_sex_linked_sequences:
             --sample {params.sample} \
             --flank {params.flank} \
             --max_hits {params.max_hits} \
-            --exclude \
             > {log} 2>&1
         """
