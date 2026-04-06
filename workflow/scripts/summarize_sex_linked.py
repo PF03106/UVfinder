@@ -1,10 +1,10 @@
-# !/usr/bin/env python3
-# # Phase 4: Summarize & Filter Sex-linked Loci
+#!/usr/bin/env python3
+# Phase 4: Summarize & Filter Sex-linked Loci
 import pandas as pd
 import argparse
 import os
 
-def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_species):
+def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_not_sex_linked, out_order, out_species):
     print(f"--- Summarizing Sex-linked Loci from {len(tsv_files)} samples ---")
     
     # 1. Load sample metadata (Order)
@@ -16,6 +16,7 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_specie
         return
 
     collected_data_dict = {}
+    all_genes = set()
 
     # 2. Iterate through all sample TSVs
     for tsv in tsv_files:
@@ -31,6 +32,10 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_specie
         try:
             df = pd.read_csv(tsv, sep='\t')
             if 'sex_tag' not in df.columns: continue
+
+            if 'qseqid' in df.columns:
+                current_genes = df['qseqid'].astype(str).apply(lambda x: x.split('|')[0])
+                all_genes.update(current_genes)
 
             targets = df[df['sex_tag'].str.upper().isin(['U', 'V'])]
             
@@ -55,6 +60,7 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_specie
     # If no data, create empty files
     if not collected_data_dict:
         open(out_list, 'w').close()
+        open(out_not_sex_linked, 'w').close()
         pd.DataFrame(columns=["Order", "Gene", "Count", "Samples"]).to_csv(out_order, sep='\t', index=False)
         pd.DataFrame(columns=["Sample", "Order","Genus", "Species", "Gene_Count", "Sex_Linked_Genes"]).to_csv(out_species, sep='\t', index=False)
         return
@@ -65,6 +71,12 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_specie
     unique_genes = sorted(full_df["Gene"].unique())
     with open(out_list, 'w') as f:
         for gene in unique_genes:
+            f.write(f"{gene}\n")
+
+    # --- [File 4] Not Sex-linked Gene list (not_sex_linked_genes.txt) ---
+    not_sex_linked_genes = sorted(list(all_genes - set(unique_genes)))
+    with open(out_not_sex_linked, 'w') as f:
+        for gene in not_sex_linked_genes:
             f.write(f"{gene}\n")
             
     # --- [File 2] Statistical summary by Order (sex_linked_summary_by_order.tsv) ---
@@ -100,19 +112,23 @@ def summarize_sex_linked(tsv_files, samples_tsv, out_list, out_order, out_specie
     final_sample_summary[columns_order].to_csv(out_species, sep='\t', index=False)
 
     print(f"✅ Summary Generated:")
-    print(f"   - Unique Genes: {len(unique_genes)}")
-    print(f"   - Output 1 (List): {out_list}")
+    print(f"   - Total Unique Genes across all hits: {len(all_genes)}")
+    print(f"   - Sex-linked Genes: {len(unique_genes)}")
+    print(f"   - Not Sex-linked Genes: {len(not_sex_linked_genes)}")
+    print(f"   - Output 1 (Sex-linked List): {out_list}")
     print(f"   - Output 2 (By Order): {out_order}")
     print(f"   - Output 3 (By Species): {out_species}")
+    print(f"   - Output 4 (Not Sex-linked List): {out_not_sex_linked}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--tsvs", nargs='+', required=True)
     parser.add_argument("--samples_tsv", required=True)
     parser.add_argument("--out_list", required=True)
+    parser.add_argument("--out_not_sex_linked", required=True)
     parser.add_argument("--out_order", required=True)
     parser.add_argument("--out_species", required=True) 
     
     args = parser.parse_args()
     
-    summarize_sex_linked(args.tsvs, args.samples_tsv, args.out_list, args.out_order, args.out_species)
+    summarize_sex_linked(args.tsvs, args.samples_tsv, args.out_list, args.out_not_sex_linked, args.out_order, args.out_species)
