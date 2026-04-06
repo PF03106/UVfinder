@@ -3,18 +3,17 @@
 
 RESULTS_DIR = config["paths"]["results"]    # path for output files (result directory)
 
-# Rule 1: Gather Sequences
+# Rule 1: Gather Sequences for MSA (Merge sequences from all samples for each gene)
 rule gather_sequences:
     input:
-        extracted_dirs = expand(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/{{type}}", sample_id=SAMPLES, type=["Best", "All", "Not_sex_linked"]),
-        gene_list = f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt"
+        extracted_dirs = lambda wildcards: expand(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/{wildcards.type}", sample_id=SAMPLES)
     output:
         merged = f"{RESULTS_DIR}/06_alignment/{{type}}/merged/{{gene}}.fasta"
     params:
         base_dir = f"{RESULTS_DIR}/05_extracted",
         samples = lambda w: " ".join(SAMPLES),
         min_taxa = config["params"]["mafft"]["min_taxa"]
-    log: "logs/6-1/gather_{type}_{gene}.log"
+    log: "logs/6-1/{type}/gather_{gene}.log"
     shell:
         """
         python3 workflow/scripts/gather_seqs_for_msa.py \
@@ -26,7 +25,6 @@ rule gather_sequences:
             --min_taxa {params.min_taxa} \
             > {log} 2>&1
         """
-
 # Rule 2: MAFFT Alignment (Alignment with Reference included)
 rule mafft_alignment:
     input:

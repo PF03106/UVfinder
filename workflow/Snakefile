@@ -19,16 +19,23 @@ def get_dynamic_targets(wildcards):
     checkpoint_output = checkpoints.select_sex_linked_loci.get(**wildcards).output.out_list
     
     # 2. Read file and create gene ID list
-    with open(checkpoint_output) as f:
+    sex_linked_file = checkpoint_output.out_list
+    not_sex_linked_file =checkpoint_output.out_not_sex_linked
+
+    with open(sex_linked_file) as f:
         genes = [line.strip() for line in f if line.strip()]
+    with open(not_sex_linked_file) as f:
+        not_sex_linked_genes = [line.strip() for line in f if line.strip()]
         
     # 3. Return Trimmed Alignment file paths (Trees)
-    trees = expand(f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}.treefile", 
-                   type=["Best", "All", "Not_sex_linked"], 
+    trees_sex_linked = expand(f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}.treefile", 
+                   type=["Best", "All"], 
                    gene=genes)
-                 
+    trees_not_sex_linked = expand(f"{RESULTS_DIR}/07_phylogeny/Not_sex_linked/{{gene}}.treefile",
+                                  gene=not_sex_linked_genes)
+
     # Combine and return both target lists
-    return trees
+    return trees_sex_linked + trees_not_sex_linked
 
 # 4. Rule all
 rule all:
@@ -47,10 +54,13 @@ rule all:
         expand(f"{RESULTS_DIR}/03_locus_search/{{s}}/B_Best_hits.tsv", s=SAMPLES),
         # Phase 4: select loci that are sex linked and qc
         f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt",
+        f"{RESULTS_DIR}/04_filtered/sex_linked_species_lists.tsv",
         f"{RESULTS_DIR}/04_filtered/sex_linked_summary_by_order.tsv",
+        f"{RESULTS_DIR}/04_filtered/not_sex_linked_genes.txt",
         # Phase 5: Extract sequences
         expand(f"{RESULTS_DIR}/05_extracted/{{s}}/Best", s=SAMPLES),
         expand(f"{RESULTS_DIR}/05_extracted/{{s}}/All", s=SAMPLES),
+        expand(f"{RESULTS_DIR}/05_extracted/{{s}}/Not_sex_linked", s=SAMPLES),
         # Phase 6 & 7: MSA, TrimAL, IQTree, and Viz (dynamic targets)
         get_dynamic_targets
 
