@@ -26,5 +26,6 @@ checkpoint select_sex_linked_loci:
             --out_list {output.out_list} \
             --out_order {output.out_order} \
             --out_species {output.out_species} \
+            --out_not_sex_linked {output.out_not_sex_linked} \
             > {log} 2>&1
         """

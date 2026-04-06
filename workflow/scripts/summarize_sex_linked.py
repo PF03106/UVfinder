@@ -125,9 +125,9 @@ if __name__ == "__main__":
     parser.add_argument("--tsvs", nargs='+', required=True)
     parser.add_argument("--samples_tsv", required=True)
     parser.add_argument("--out_list", required=True)
-    parser.add_argument("--out_not_sex_linked", required=True)
     parser.add_argument("--out_order", required=True)
     parser.add_argument("--out_species", required=True) 
+    parser.add_argument("--out_not_sex_linked", required=True)
     
     args = parser.parse_args()
     
