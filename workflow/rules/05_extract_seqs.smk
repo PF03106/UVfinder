@@ -68,7 +68,7 @@ rule extract_not_sex_linked_sequences:
         sample = "{sample_id}",
         flank = config["params"]["flanking_bp"],
         max_hits = config["params"]["max_blast_hits"]
-    log: "logs/5_best/extract_best_nontarget_{sample_id}.log"
+    log: "logs/5_not_sex_linked/extract_not_sex_linked_{sample_id}.log"
     shell:
         """
         python3 workflow/scripts/extract_sex_linked_with_flanks.py \
