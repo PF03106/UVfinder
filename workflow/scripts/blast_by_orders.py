@@ -26,6 +26,7 @@ def filter_probes_by_order(sample_id, samples_tsv, probe_dir, output_fasta):
     count_total = 0
     locus_matched = 0
     locus_fallback = 0
+    fallback_loci_list=[]
 
     # 3. Traverse probe directory and filter locus by locus
     with open(output_fasta, "w") as out_f:
@@ -53,7 +54,8 @@ def filter_probes_by_order(sample_id, samples_tsv, probe_dir, output_fasta):
             else:
                 records_to_write = all_records
                 locus_fallback += 1
-                
+                fallback_loci_list.append(locus_id)
+
             # Write the selected records to the output FASTA file, modifying the header to include locus ID for easier parsing later
             for record in records_to_write:
                 # [Important] Change to 'LocusID|OriginalHeader' format for easier parsing later
@@ -67,6 +69,8 @@ def filter_probes_by_order(sample_id, samples_tsv, probe_dir, output_fasta):
     print(f"✅ Successfully collected {count_total} total probes for {sample_id}.")
     print(f"   - Loci with target order '{order_norm}': {locus_matched}")
     print(f"   - Loci using all sequences (fallback): {locus_fallback}")
+    if fallback_loci_list:
+        print(f"   - Fallback loci: {', '.join(fallback_loci_list)}")
 
 
 if __name__ == "__main__":
