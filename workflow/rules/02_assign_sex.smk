@@ -44,17 +44,20 @@ rule blast_female:
 rule assign_sex_differential:
     input:
         male_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_male.tblastn",
-        female_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_female.tblastn"
-    output: tsv = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv"
+        female_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_female.tblastn",
+        metadata = "config/samples.tsv",
+    output: out_file = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv"
     params:
         min_bitscore_ratio_UV = config["params"]["min_bitscore_ratio_UV"]
     log: f"logs/2-2/assign_sex_{{sample_id}}.log"
     shell:
         """
         python3 workflow/scripts/assign_sex_diff.py \
-            --male {input.male_res} \
-            --female {input.female_res} \
-            --output {output.tsv} \
+            --sample {wildcards.sample_id} \
+            --samples_tsv {input.metadata} \
+            --male_blast {input.male_res} \
+            --female_blast {input.female_res} \
+            --output {output.out_file} \
             --min_bitscore_ratio_UV {params.min_bitscore_ratio_UV} > {log} 2>&1
         """
 
