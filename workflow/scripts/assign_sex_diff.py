@@ -10,7 +10,7 @@ def get_best_score(file_path, min_bitscore_ratio_UV):
     """
     # Check if file exists and is not empty
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-        return "None", 0
+        return "None", 0, 0
     
     # BLAST outfmt 6 columns
     cols = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", 
@@ -19,10 +19,10 @@ def get_best_score(file_path, min_bitscore_ratio_UV):
     try:
         df = pd.read_csv(file_path, sep='\t', names=cols, dtype={'sseqid': str})
     except Exception:
-        return "None", 0
+        return "None", 0, 0
 
     if df.empty:
-        return "None", 0
+        return "None", 0, 0
 
     # Calculate filtering threshold based on the top hit in the file
     absolute_max = df['bitscore'].max()
@@ -33,14 +33,15 @@ def get_best_score(file_path, min_bitscore_ratio_UV):
     
     # Step 2: Filter for formal Chromosome (Chr) naming convention
     # Adjust regex if your assembly uses different naming (e.g., 'scaffold')
-    filtered = filtered[filtered['sseqid'].str.contains(r'Chr(\d{1,2}|[a-zA-Z])$', regex=True, na=False)]
+    # filtered = filtered[filtered['sseqid'].str.contains(r'Chr(\d{1,2}|[a-zA-Z])$', regex=True, na=False)]
+    # !!! ---- We're keeping all hits for now, as some assemblies may not follow strict 'Chr' naming. Adjust as needed.----!!!
     
     if filtered.empty:
-        return "None", 0
+        return "None", 0, 0
     
     # Step 3: Select the hit with the highest bitscore
     best = filtered.sort_values(by='bitscore', ascending=False).iloc[0]
-    return best['sseqid'], best['bitscore']
+    return best['sseqid'], best['bitscore'], best['length']
 
 def main():
     parser = argparse.ArgumentParser(description="Sex identification based on normalized BLAST bitscores.")
@@ -61,13 +62,12 @@ def main():
         sample_order = "unknown"
 
     # 2. Retrieve best bitscores from BLAST results
-    m_contig, m_score = get_best_score(args.male_blast, args.min_bitscore_ratio_UV)
-    f_contig, f_score = get_best_score(args.female_blast, args.min_bitscore_ratio_UV)
+    m_contig, m_score, m_length = get_best_score(args.male_blast, args.min_bitscore_ratio_UV)
+    f_contig, f_score, f_length = get_best_score(args.female_blast, args.min_bitscore_ratio_UV)
 
     # 3. Normalize scores by marker length
-    # Male marker: 384 bp | Female marker: 595 bp
-    m_norm = m_score / 378
-    f_norm = f_score / 586
+    m_norm = (m_score / m_length) if m_length > 0 else 0
+    f_norm = (f_score / f_length) if f_length > 0 else 0
 
     # 4. Initialize result dictionary
     res = {
