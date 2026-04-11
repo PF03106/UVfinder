@@ -52,13 +52,14 @@ rule assign_sex_differential:
     log: f"logs/2-2/assign_sex_{{sample_id}}.log"
     shell:
         """
+        echo "[$(date)] working on sample {wildcards.sample_id}..." > {log}
         python3 workflow/scripts/assign_sex_diff.py \
             --sample {wildcards.sample_id} \
             --samples_tsv {input.metadata} \
             --male_blast {input.male_res} \
             --female_blast {input.female_res} \
             --output {output.out_file} \
-            --min_bitscore_ratio_UV {params.min_bitscore_ratio_UV} > {log} 2>&1
+            --min_bitscore_ratio_UV {params.min_bitscore_ratio_UV} >> {log} 2>&1
         """
 
 # Aggregate all the result from sex_sgginment.tsv
@@ -69,20 +70,12 @@ rule aggregate_sex_id:
     output:
         all_res = f"{RESULTS_DIR}/02_sex_id/all_samples_sex_assignment.tsv"
     log: f"logs/2-3/aggregate_sex_id.log"
-    run:
-        import pandas as pd
-        import os
-
-        dfs=[]
-        for f in input.results:
-            df = pd.read_csv(f, sep='\t')
-            sample_name = os.path.basename(f).replace("_sex_assignment.tsv", "")
-            df.insert(0, "sample_id", sample_name)
-            dfs.append(df)
-        combined_df = pd.concat(dfs, ignore_index=True)
-
-        meta_df = pd.read_csv(input.metadata, sep='\t')
-        final_df = pd.merge(combined_df, meta_df[['sample_id', 'genus', 'species']], on='sample_id', how='left')
-        cols = ['sample_id', 'genus', 'species'] + [col for col in final_df.columns if col not in ['sample_id', 'genus', 'species']]
-        final_df = final_df[cols]
-        final_df.to_csv(output.all_res, sep='\t', index=False)
+    shell: 
+        """
+        echo "[$(date)] Run workflow/scripts/aggregate_sex_id.py"
+        python3 -u workflow/scripts/aggregate_sex_id.py \
+            --inputs {input.results} \
+            --metadata {input.metadata} \
+            --output {output.all_res} > {log} 2>&1
+        echo "[$(date)] Finished aggregating tsv. Check {output.all_res} for results."
+        """
