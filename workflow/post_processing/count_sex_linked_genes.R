@@ -7,8 +7,14 @@ library(ggplot2)
 library(dplyr)
 
 # 2. Define paths
+
 Results_dir <- "results/04_filtered"
-file_path <- file.path(Results_dir, "sex_linked_summary_by_order.tsv")
+## tsv
+file_name <- "sex_linked_summary_by_order.tsv"
+file_path <- file.path(Results_dir, file_name)
+## svg
+save_name <- "sex_linked_summary_by_order.svg"
+save_path <- file.path(Results_dir, save_name)
 
 # Create the directory if it doesn't exist
 if (!dir.exists(Results_dir)) dir.create(Results_dir, recursive = TRUE)
@@ -46,7 +52,7 @@ p <- ggplot(df_processed, aes(x = Order, y = n, fill = Category)) +
                                "3+ Samples (Highly Shared)" = "#009E73")) +
   labs(
     title = "Distribution of Sex-linked Loci across Moss Orders",
-    x = "Taxonomic Order",
+    x = "Order",
     y = "Number of Sex-linked Genes",
     fill = "Evidence Level"
   ) +
@@ -56,9 +62,6 @@ p <- ggplot(df_processed, aes(x = Order, y = n, fill = Category)) +
     panel.grid.major.x = element_blank(),
     legend.position = "top"
   )
-
-save_name <- "sex_linked_summary_by_order.svg"
-save_path <- file.path(Results_dir, save_name)
 
 ggsave(save_path, p, width = 10, height = 7, device = "svg")
 
