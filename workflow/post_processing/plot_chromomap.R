@@ -14,7 +14,7 @@ library(data.table)
 genome_base <- "/blue/mcdaniel/seyeonkim/UVfinder/results/00_renamed"
 blast_base <- "/blue/mcdaniel/seyeonkim/UVfinder/results/03_locus_search"
 meta_file <- "/blue/mcdaniel/seyeonkim/UVfinder/config/samples.tsv"
-out_dir <- "/blue/mcdaniel/seyeonkim/UVfinder/results/polytricales_chromomap"
+out_dir <- "/blue/mcdaniel/seyeonkim/UVfinder/results/Hypanales_chromomap"  #CHANGE THIS PATH TO YOUR DESIRED OUTPUT DIRECTORY
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # -------------------------------
