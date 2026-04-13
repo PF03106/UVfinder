@@ -7,7 +7,17 @@ RESULTS_DIR = config["paths"]["results"]
 samples_df = pd.read_csv("config/samples.tsv", sep="\t").set_index("sample_id", drop=False)
 
 # 2. make sample_id list
-SAMPLES = samples_df["sample_id"].tolist()
+TARGET_ORDER = config.get("target_order", "All")
+OUTGROUP_ID = config.get("outgroup", "S0005") # Aulacomnium turgidum(default for Hypnales) >>> Modify if necessary. You can also set it at config.yaml as "outgroup: S0005" and it will be read here.
+
+if TARGET_ORDER != "All":   #Analyze only samples from the target order + outgroup
+    filtered_df = samples_df[(samples_df['order'] == TARGET_ORDER) | (samples_df['sample_id'] == OUTGROUP_ID)]
+    SAMPLES = filtered_df["sample_id"].tolist()
+    print(f"\n Targeted Analysis Mode: {TARGET_ORDER} + Outgroup({OUTGROUP_ID})")
+    print(f" Total samples selected: {len(SAMPLES)}\n")
+else:   # Analyze all samples (Default)
+    SAMPLES = samples_df["sample_id"].tolist()
+    print(f"\n Full Analysis Mode: All {len(SAMPLES)} samples.\n")
 
 # 3. Define dynamic targets for phylogeny and visualization
 def get_dynamic_targets(wildcards):
