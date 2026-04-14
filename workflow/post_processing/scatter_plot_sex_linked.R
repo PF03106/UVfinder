@@ -46,17 +46,18 @@ scatter_plot <- ggplot(final_summary, aes(x = Sample_Size, y = Total_Genes_Found
                   box.padding = 0.5) +
   # Labs and styling
   labs(
-    title = "Sample Size vs. Sex-linked Gene",
+    title = "Sample Size vs. Number of Sex-linked Gene",
     x = "Number of Samples(Orders)",
     y = "Total Sex-linked Genes Found",
+    color = "Order",
   ) +
   theme_minimal() +
   theme(
-    legend.position = "none", # Hide legend since labels are on points
+    legend.position = "right", 
     plot.title = element_text(face = "bold", size = 14),
     axis.title = element_text(size = 11)
   )
 
 # 5. Save and Print
-print(scatter_plot)
+cat("Saving scatter plot to:", save_path, "\n")
 ggsave(save_path, scatter_plot, width = 10, height = 7, device = "svg")
