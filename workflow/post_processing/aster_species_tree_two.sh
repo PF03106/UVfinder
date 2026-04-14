@@ -15,8 +15,8 @@
 OUT_FILE_PREFIX=hypnales
 THREAD=8
 ## Input directories (iqtree results, (*.treefile))
-IQTREE_RESULTS_DIR1=results/07_phylogeny/Best
-IQTREE_RESULTS_DIR2=results/07_phylogeny/Not_sex_linked # Modify if necessary
+IQTREE_RESULTS_DIR1=results/07_phylogeny_hypnales/Best
+IQTREE_RESULTS_DIR2=results/07_phylogeny_hypnales/Not_sex_linked # Modify if necessary
 ## Output directory
 OUTPUT_DIR=results/${OUT_FILE_PREFIX}_aster/
 ### Create output directory if it doesn't exist
@@ -34,7 +34,7 @@ fi
 echo "Concatenated gene trees saved to ${RAW_CAT_TREE_FILE}"
 
 # 3. clean the concatenated tree file by removing redundant names
-sed -E 's/_G[0-9]+_R[0-9]+_[AUV]//g' ${RAW_CAT_TREE_FILE} > ${CLEAN_CAT_TREE_FILE}
+sed -E 's/_G[0-9]+_R[0-9]+_[AUVN]//g' ${RAW_CAT_TREE_FILE} > ${CLEAN_CAT_TREE_FILE}
 
 # 4. Run WASTRAL(Aster)
 ## Load modules

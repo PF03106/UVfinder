@@ -33,7 +33,7 @@ fi
 echo "Concatenated gene trees saved to ${RAW_CAT_TREE_FILE}"
 
 # 3. clean the concatenated tree file by removing redundant names
-sed -E 's/_G[0-9]+_R[0-9]+_[AUV]//g' ${RAW_CAT_TREE_FILE} > ${CLEAN_CAT_TREE_FILE}
+sed -E 's/_G[0-9]+_R[0-9]+_[AUVN]//g' ${RAW_CAT_TREE_FILE} > ${CLEAN_CAT_TREE_FILE}
 
 # 4. Run WASTRAL(Aster)
 ## Load modules
