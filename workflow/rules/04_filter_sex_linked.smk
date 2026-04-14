@@ -15,7 +15,8 @@ checkpoint select_sex_linked_loci:
     output:
         out_list = f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt",
         out_order = f"{RESULTS_DIR}/04_filtered/sex_linked_summary_by_order.tsv",
-        out_species = f"{RESULTS_DIR}/04_filtered/sex_linked_species_lists.tsv"
+        out_species = f"{RESULTS_DIR}/04_filtered/sex_linked_species_lists.tsv",
+        out_not_sex_linked = f"{RESULTS_DIR}/04_filtered/not_sex_linked_genes.txt",
     log: "logs/4/sex_linked_loci_summary.log"
     shell:
         """
@@ -25,5 +26,6 @@ checkpoint select_sex_linked_loci:
             --out_list {output.out_list} \
             --out_order {output.out_order} \
             --out_species {output.out_species} \
+            --out_not_sex_linked {output.out_not_sex_linked} \
             > {log} 2>&1
         """

@@ -13,7 +13,11 @@ rule blast_male:
     log: f"logs/2-1/blast_male_{{sample_id}}.log"
     shell: 
         """
-        tblastn -query {input.query} -db {params.db_prefix} -evalue {params.evalue} -outfmt '6 std qlen' -out {output} > {log} 2>&1
+        tblastn \
+        -query {input.query} \
+        -db {params.db_prefix} \
+        -evalue {params.evalue} \
+        -outfmt '6 std' -out {output} > {log} 2>&1
         """
 
 # BLAST for female markers
@@ -26,27 +30,36 @@ rule blast_female:
     log: f"logs/2-1/blast_female_{{sample_id}}.log"
     shell: 
         """
-        tblastn -query {input.query} -db {params.db_prefix} -evalue {params.evalue} -outfmt '6 std qlen' -out {output} > {log} 2>&1
+        echo "[$(date)] Starting BLAST search for {wildcards.sample_id}..." > {log}
+        tblastn \
+        -query {input.query} \
+        -db {params.db_prefix} \
+        -evalue {params.evalue} \
+        -outfmt '6 std' -out {output} \
+        >> {log} 2>&1
+        echo "[$(date)] Finished BLAST search for {wildcards.sample_id}." >> {log}
         """
 
 # ID U or V or Unknown
 rule assign_sex_differential:
     input:
         male_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_male.tblastn",
-        female_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_female.tblastn"
-    output: tsv = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv"
+        female_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_female.tblastn",
+        metadata = "config/samples.tsv",
+    output: out_file = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv"
     params:
-        min_cov_UV = config["params"]["min_coverage_UV"],
-        max_evalue = config["params"]["uv_blast_evalue"]
+        min_bitscore_ratio_UV = config["params"]["min_bitscore_ratio_UV"]
     log: f"logs/2-2/assign_sex_{{sample_id}}.log"
     shell:
         """
+        echo "[$(date)] working on sample {wildcards.sample_id}..." > {log}
         python3 workflow/scripts/assign_sex_diff.py \
-            --male {input.male_res} \
-            --female {input.female_res} \
-            --output {output.tsv} \
-            --min_cov {params.min_cov_UV} \
-            --max_evalue {params.max_evalue} > {log} 2>&1
+            --sample {wildcards.sample_id} \
+            --samples_tsv {input.metadata} \
+            --male_blast {input.male_res} \
+            --female_blast {input.female_res} \
+            --output {output.out_file} \
+            --min_bitscore_ratio_UV {params.min_bitscore_ratio_UV} >> {log} 2>&1
         """
 
 # Aggregate all the result from sex_sgginment.tsv
@@ -57,20 +70,12 @@ rule aggregate_sex_id:
     output:
         all_res = f"{RESULTS_DIR}/02_sex_id/all_samples_sex_assignment.tsv"
     log: f"logs/2-3/aggregate_sex_id.log"
-    run:
-        import pandas as pd
-        import os
-
-        dfs=[]
-        for f in input.results:
-            df = pd.read_csv(f, sep='\t')
-            sample_name = os.path.basename(f).replace("_sex_assignment.tsv", "")
-            df.insert(0, "sample_id", sample_name)
-            dfs.append(df)
-        combined_df = pd.concat(dfs, ignore_index=True)
-
-        meta_df = pd.read_csv(input.metadata, sep='\t')
-        final_df = pd.merge(combined_df, meta_df[['sample_id', 'genus', 'species']], on='sample_id', how='left')
-        cols = ['sample_id', 'genus', 'species'] + [col for col in final_df.columns if col not in ['sample_id', 'genus', 'species']]
-        final_df = final_df[cols]
-        final_df.to_csv(output.all_res, sep='\t', index=False)
+    shell: 
+        """
+        echo "[$(date)] Run workflow/scripts/aggregate_sex_id.py"
+        python3 -u workflow/scripts/aggregate_sex_id.py \
+            --inputs {input.results} \
+            --metadata {input.metadata} \
+            --output {output.all_res} > {log} 2>&1
+        echo "[$(date)] Finished aggregating tsv. Check {output.all_res} for results."
+        """

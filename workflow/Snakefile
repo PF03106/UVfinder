@@ -7,7 +7,34 @@ RESULTS_DIR = config["paths"]["results"]
 samples_df = pd.read_csv("config/samples.tsv", sep="\t").set_index("sample_id", drop=False)
 
 # 2. make sample_id list
-SAMPLES = samples_df["sample_id"].tolist()
+raw_target = config.get("target_order")
+TARGET_ORDER = str(raw_target).strip() if raw_target else "All"
+
+if TARGET_ORDER.lower() != "all":   
+    if "outgroup" not in config or not config["outgroup"]:
+        raise ValueError(
+            f"\n[ERROR] 'target_order'({TARGET_ORDER})\n"
+        )
+    
+    OUTGROUP_ID = str(config["outgroup"]).strip()
+
+    if OUTGROUP_ID not in samples_df["sample_id"].values:
+        raise ValueError(f"\n[ERROR] The specified outgroup '{OUTGROUP_ID}' does not exist in the samples.tsv file!\n")
+
+    filtered_df = samples_df[(samples_df['order'].str.lower() == TARGET_ORDER.lower()) | 
+                             (samples_df['sample_id'] == OUTGROUP_ID)]
+    
+    SAMPLES = filtered_df["sample_id"].tolist()
+    
+    if len(SAMPLES) <= 1:
+        raise ValueError(f"\n[ERROR] There are no samples for the target order: {TARGET_ORDER}\n")
+
+    print(f"\nTargeted Analysis Mode: {TARGET_ORDER} + Outgroup({OUTGROUP_ID})")
+    print(f"Total samples selected: {len(SAMPLES)}\n")
+
+else:   
+    SAMPLES = samples_df["sample_id"].tolist()
+    print(f"\nFull Analysis Mode: All {len(SAMPLES)} samples.\n")
 
 # 3. Define dynamic targets for phylogeny and visualization
 def get_dynamic_targets(wildcards):
@@ -16,22 +43,26 @@ def get_dynamic_targets(wildcards):
     read the generated all_sex_linked_genes.txt and return the final tree & viz file lists.
     """
     # 1. Get checkpoint output file (wait for Phase 4 completion)
-    checkpoint_output = checkpoints.select_sex_linked_loci.get(**wildcards).output.out_list
+    checkpoint_output = checkpoints.select_sex_linked_loci.get(**wildcards).output
     
     # 2. Read file and create gene ID list
-    with open(checkpoint_output) as f:
+    sex_linked_file = checkpoint_output.out_list
+    not_sex_linked_file =checkpoint_output.out_not_sex_linked
+
+    with open(sex_linked_file) as f:
         genes = [line.strip() for line in f if line.strip()]
+    with open(not_sex_linked_file) as f:
+        not_sex_linked_genes = [line.strip() for line in f if line.strip()]
         
-    # 3. Return Trimmed Alignment file paths (Trees) + Visualization paths
-    trees = expand(f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}.treefile", 
+    # 3. Return Trimmed Alignment file paths (Trees)
+    trees_sex_linked = expand(f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}.treefile", 
                    type=["Best", "All"], 
                    gene=genes)
-    
-    viz = expand(f"{RESULTS_DIR}/07_phylogeny/Best/{{gene}}_viz.png", 
-                 gene=genes)
-                 
+    trees_not_sex_linked = expand(f"{RESULTS_DIR}/07_phylogeny/Not_sex_linked/{{gene}}.treefile",
+                                  gene=not_sex_linked_genes)
+
     # Combine and return both target lists
-    return trees + viz
+    return trees_sex_linked + trees_not_sex_linked
 
 # 4. Rule all
 rule all:
@@ -50,10 +81,13 @@ rule all:
         expand(f"{RESULTS_DIR}/03_locus_search/{{s}}/B_Best_hits.tsv", s=SAMPLES),
         # Phase 4: select loci that are sex linked and qc
         f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt",
+        f"{RESULTS_DIR}/04_filtered/sex_linked_species_lists.tsv",
         f"{RESULTS_DIR}/04_filtered/sex_linked_summary_by_order.tsv",
+        f"{RESULTS_DIR}/04_filtered/not_sex_linked_genes.txt",
         # Phase 5: Extract sequences
         expand(f"{RESULTS_DIR}/05_extracted/{{s}}/Best", s=SAMPLES),
         expand(f"{RESULTS_DIR}/05_extracted/{{s}}/All", s=SAMPLES),
+        expand(f"{RESULTS_DIR}/05_extracted/{{s}}/Not_sex_linked", s=SAMPLES),
         # Phase 6 & 7: MSA, TrimAL, IQTree, and Viz (dynamic targets)
         get_dynamic_targets
 
