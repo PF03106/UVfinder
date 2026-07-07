@@ -10,15 +10,25 @@ Before running UVfinder, ensure you have the following installed:
 ## Installation
 
 1. **Clone the repository:**
+
+
    ```bash
    git clone [https://github.com/PF03106/UVfinder.git](https://github.com/PF03106/UVfinder.git)
    cd UVfinder
 2. **Set up the conda env**
+
+
     It is highly recommended to use Conda for environment management. You can create the required environment using the provided uvfinder.yaml
     ```bash
     conda env create -f uvfinder.yaml
 3. **Configuration**
-    To run UVfinder, users have to provide chromosome-level assembled genome files. Locate input genome files under 'resources/genomes' (or other preffered locations) and create samples.tsv. Below is the example of samples.tsv. (Users can put "Unknown" in the order columns)
+
+
+    To run UVfinder, users must provide chromosome-level assembled genome files.
+
+    Input Genomes: Place your input genome files in the resources/genomes directory (or your preferred location).
+
+    Sample Information: Create a samples.tsv file to map your sample IDs to their metadata. Below is an example of samples.tsv. (Users can input "Unknown" in the \<order\> columns if necessary).
     ```
     sample_id	order	genus	species	genome_filename
     S0001	Polytrichales	Atrichum	angustatum	GCA_050084355.1_ASM5008435v1_genomic.fna
@@ -29,7 +39,9 @@ Before running UVfinder, ensure you have the following installed:
     Then adjust paths(files/directories name) and parameters at config/config.yaml
 
 4. **Running UVfinder**
-    You can adjust cores, latency-wait, and other options for running UVfinder
+
+
+    Users can adjust cores, latency-wait, and other options for running UVfinder
     ```bash
         # 1. Load Conda/Mamba (if required by your institutional HPC environment)
         module load conda
@@ -43,3 +55,10 @@ Before running UVfinder, ensure you have the following installed:
 
         # 4. Run the pipeline
         snakemake --cores 8 -p --latency-wait 120 --keep-going --rerun-incomplete
+        ```
+## Citation
+If you use UVfinder in your research, please cite our manuscript (in preparation):
+
+
+## Issues
+For any questions, bug reports, or feature requests, please open an issue on this GitHub repository
