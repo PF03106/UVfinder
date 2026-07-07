@@ -1,0 +1,485 @@
+IQ-TREE version 3.0.1 for Linux x86 64-bit built Jul  9 2025
+Developed by Bui Quang Minh, Thomas Wong, Nhan Ly-Trong, Huaiyan Ren
+Contributed by Lam-Tung Nguyen, Dominik Schrempf, Chris Bielow,
+Olga Chernomor, Michael Woodhams, Diep Thi Hoang, Heiko Schmidt
+
+Host:    c0710a-s29.ufhpc (AVX2, FMA3, 503 GB RAM)
+Command: iqtree -s results_moss_new/06_alignment/Not_sex_linked/trimmed/G6176.trimmed.aln --prefix results_moss_new/07_phylogeny/Not_sex_linked/G6176 -m MFP -B 1000 -T AUTO
+Seed:    339846 (Using SPRNG - Scalable Parallel Random Number Generator)
+Time:    Thu Jun 11 22:28:47 2026
+Kernel:  AVX+FMA - auto-detect threads (8 CPU cores detected)
+
+Reading alignment file results_moss_new/06_alignment/Not_sex_linked/trimmed/G6176.trimmed.aln ... Fasta format detected
+Reading fasta file: done in 0.000587427 secs using 15.32% CPU
+Alignment most likely contains DNA/RNA sequences
+Constructing alignment: done in 0.000595862 secs using 11.08% CPU
+Alignment has 10 sequences with 1906 columns, 821 distinct patterns
+724 parsimony-informative, 422 singleton sites, 760 constant sites
+                  Gap/Ambiguity  Composition  p-value
+Analyzing sequences: done in 1.3906e-05 secs
+   1  S0027_G6176_R1_A   51.73%    failed      3.26%
+   2  S0039_G6176_R1_A   46.59%    failed      0.00%
+   3  S0051_G6176_R1_A   46.38%    failed      0.01%
+   4  S0003_G6176_R1_N   27.28%    passed     81.18%
+   5  S0034_G6176_R1_A    2.73%    passed      7.93%
+   6  S0015_G6176_R1_A    0.21%    passed      5.56%
+   7  S0009_G6176_R1_A    2.83%    passed     74.53%
+   8  S0010_G6176_R1_A    2.78%    passed     65.56%
+   9  S0008_G6176_R1_A    3.20%    passed     50.13%
+  10  S0014_G6176_R1_A    5.14%    passed     57.77%
+WARNING: 1 sequences contain more than 50% gaps/ambiguity
+****  TOTAL              18.89%  3 sequences failed composition chi2 test (p-value<5%; df=3)
+Checking for duplicate sequences: done in 2.13201e-05 secs
+
+
+Create initial parsimony tree by phylogenetic likelihood library (PLL)... 0.000 seconds
+Measuring multi-threading efficiency up to 8 CPU cores
+Increase to 10 rounds for branch lengths
+835 trees examined
+Threads: 1 / Time: 8.002 sec / Speedup: 1.000 / Efficiency: 100% / LogL: -11364
+Threads: 2 / Time: 22.304 sec / Speedup: 0.359 / Efficiency: 18% / LogL: -11364
+Determining AUTO threadcount: done in 30.3065 secs using 99.76% CPU
+BEST NUMBER OF THREADS: 1
+
+Perform fast likelihood tree search using GTR+I+G model...
+Estimate model parameters (epsilon = 5.000)
+Perform nearest neighbor interchange...
+Optimizing NNI: done in 0.00756891 secs using 98.96% CPU
+Estimate model parameters (epsilon = 1.000)
+1. Initial log-likelihood: -9346.590
+Optimal log-likelihood: -9346.130
+Rate parameters:  A-C: 0.87998  A-G: 3.23029  A-T: 0.90307  C-G: 0.93070  C-T: 3.97971  G-T: 1.00000
+Base frequencies:  A: 0.251  C: 0.196  G: 0.238  T: 0.315
+Proportion of invariable sites: 0.190
+Gamma shape alpha: 2.779
+Parameters optimization took 1 rounds (0.007 sec)
+Time for fast ML tree search: 0.056 seconds
+
+NOTE: ModelFinder requires 5 MB RAM!
+ModelFinder will test up to 968 DNA models (sample size: 1906 epsilon: 0.100) ...
+ No. Model         -LnL         df  AIC          AICc         BIC
+  1  JC            9717.731     17  19469.462    19469.786    19563.859
+  2  JC+I          9640.037     18  19316.073    19316.436    19416.023
+  3  JC+G4         9640.261     18  19316.523    19316.885    19416.473
+  4  JC+I+G4       9636.824     19  19311.649    19312.052    19417.151
+  5  JC+R2         9637.607     19  19313.215    19313.618    19418.717
+  6  JC+R3         9636.761     21  19315.522    19316.012    19432.130
+ 14  JC+I+R2       9636.734     20  19313.468    19313.914    19424.523
+ 15  JC+I+R3       9636.697     22  19317.394    19317.931    19439.554
+ 24  JC+I          9640.037     18  19316.073    19316.436    19416.023
+ 25  JC+G4         9640.261     18  19316.523    19316.885    19416.473
+ 26  JC+I+G4       9636.824     19  19311.649    19312.052    19417.151
+ 27  JC+R2         9637.607     19  19313.215    19313.618    19418.717
+ 36  JC+I+R2       9636.734     20  19313.468    19313.914    19424.523
+ 46  F81+I         9640.036     18  19316.071    19316.434    19416.021
+ 47  F81+G4        9640.257     18  19316.514    19316.876    19416.464
+ 48  F81+I+G4      9636.810     19  19311.620    19312.023    19417.123
+ 49  F81+R2        9637.444     19  19312.888    19313.291    19418.391
+ 58  F81+I+R2      9636.720     20  19313.439    19313.885    19424.495
+ 68  F81+F+I       9592.774     21  19227.548    19228.038    19344.156
+ 69  F81+F+G4      9593.411     21  19228.821    19229.312    19345.429
+ 70  F81+F+I+G4    9589.478     22  19222.955    19223.493    19345.116
+ 71  F81+F+R2      9590.255     22  19224.510    19225.047    19346.671
+ 80  F81+F+I+R2    9589.464     23  19224.927    19225.514    19352.641
+ 90  K2P+I         9419.214     19  18876.428    18876.831    18981.930
+ 91  K2P+G4        9414.060     19  18866.120    18866.523    18971.622
+ 92  K2P+I+G4      9411.474     20  18862.948    18863.394    18974.003
+ 93  K2P+R2        9412.122     20  18864.245    18864.690    18975.300
+102  K2P+I+R2      9411.502     21  18865.004    18865.495    18981.612
+112  K2P+I         9419.214     19  18876.428    18876.831    18981.930
+113  K2P+G4        9414.060     19  18866.120    18866.523    18971.622
+114  K2P+I+G4      9411.474     20  18862.948    18863.394    18974.003
+115  K2P+R2        9412.122     20  18864.245    18864.690    18975.300
+124  K2P+I+R2      9411.502     21  18865.004    18865.495    18981.612
+134  HKY+I         9419.210     19  18876.421    18876.824    18981.923
+135  HKY+G4        9414.063     19  18866.126    18866.529    18971.628
+136  HKY+I+G4      9411.432     20  18862.864    18863.310    18973.919
+137  HKY+R2        9412.095     20  18864.190    18864.635    18975.245
+146  HKY+I+R2      9411.453     21  18864.905    18865.395    18981.513
+156  HKY+F+I       9357.694     22  18759.388    18759.925    18881.548
+157  HKY+F+G4      9352.296     22  18748.592    18749.129    18870.753
+158  HKY+F+I+G4    9349.217     23  18744.435    18745.021    18872.148
+159  HKY+F+R2      9349.982     23  18745.965    18746.551    18873.678
+168  HKY+F+I+R2    9349.203     24  18746.407    18747.045    18879.673
+178  TNe+I         9417.726     20  18875.453    18875.899    18986.508
+179  TNe+G4        9411.383     20  18862.765    18863.211    18973.821
+180  TNe+I+G4      9409.359     21  18860.718    18861.208    18977.326
+181  TNe+R2        9409.861     21  18861.722    18862.213    18978.330
+190  TNe+I+R2      9409.353     22  18862.705    18863.243    18984.866
+200  TNe+I         9417.726     20  18875.453    18875.899    18986.508
+201  TNe+G4        9411.383     20  18862.765    18863.211    18973.821
+202  TNe+I+G4      9409.359     21  18860.718    18861.208    18977.326
+203  TNe+R2        9409.861     21  18861.722    18862.213    18978.330
+212  TNe+I+R2      9409.353     22  18862.705    18863.243    18984.866
+222  TN+I          9417.726     20  18875.451    18875.897    18986.506
+223  TN+G4         9411.383     20  18862.766    18863.212    18973.822
+224  TN+I+G4       9409.337     21  18860.673    18861.164    18977.281
+225  TN+R2         9409.860     21  18861.720    18862.210    18978.328
+234  TN+I+R2       9409.343     22  18862.687    18863.224    18984.847
+244  TN+F+I        9355.577     23  18757.153    18757.740    18884.867
+245  TN+F+G4       9348.692     23  18743.383    18743.970    18871.097
+246  TN+F+I+G4     9346.256     24  18740.512    18741.150    18873.779
+247  TN+F+R2       9346.860     24  18741.721    18742.359    18874.987
+256  TN+F+I+R2     9346.152     25  18742.305    18742.996    18881.124
+266  K3P+I         9419.187     20  18878.375    18878.820    18989.430
+267  K3P+G4        9414.019     20  18868.037    18868.483    18979.092
+268  K3P+I+G4      9411.415     21  18864.831    18865.321    18981.439
+269  K3P+R2        9412.083     21  18866.166    18866.657    18982.774
+278  K3P+I+R2      9411.443     22  18866.886    18867.424    18989.047
+288  K3P+I         9419.187     20  18878.375    18878.820    18989.430
+289  K3P+G4        9414.019     20  18868.037    18868.483    18979.092
+290  K3P+I+G4      9411.415     21  18864.831    18865.321    18981.439
+291  K3P+R2        9412.083     21  18866.166    18866.657    18982.774
+300  K3P+I+R2      9411.443     22  18866.886    18867.424    18989.047
+310  K3Pu+I        9419.204     20  18878.407    18878.853    18989.462
+311  K3Pu+G4       9414.021     20  18868.042    18868.487    18979.097
+312  K3Pu+I+G4     9411.408     21  18864.817    18865.307    18981.425
+313  K3Pu+R2       9412.078     21  18866.156    18866.646    18982.764
+322  K3Pu+I+R2     9411.441     22  18866.882    18867.419    18989.043
+332  K3Pu+F+I      9357.693     23  18761.387    18761.973    18889.100
+333  K3Pu+F+G4     9352.171     23  18750.343    18750.929    18878.056
+334  K3Pu+F+I+G4   9349.064     24  18746.128    18746.766    18879.394
+335  K3Pu+F+R2     9349.923     24  18747.845    18748.483    18881.112
+344  K3Pu+F+I+R2   9349.050     25  18748.101    18748.792    18886.920
+354  TPM2+I        9419.015     20  18878.029    18878.475    18989.085
+355  TPM2+G4       9414.013     20  18868.026    18868.472    18979.081
+356  TPM2+I+G4     9411.330     21  18864.660    18865.150    18981.268
+357  TPM2+R2       9411.983     21  18865.966    18866.456    18982.574
+366  TPM2+I+R2     9411.349     22  18866.698    18867.236    18988.859
+376  TPM2+I        9419.015     20  18878.029    18878.475    18989.085
+377  TPM2+G4       9414.013     20  18868.026    18868.472    18979.081
+378  TPM2+I+G4     9411.330     21  18864.660    18865.150    18981.268
+379  TPM2+R2       9411.983     21  18865.966    18866.456    18982.574
+388  TPM2+I+R2     9411.349     22  18866.698    18867.236    18988.859
+398  TPM2u+I       9419.020     20  18878.040    18878.486    18989.095
+399  TPM2u+G4      9414.021     20  18868.042    18868.488    18979.098
+400  TPM2u+I+G4    9411.325     21  18864.649    18865.140    18981.257
+401  TPM2u+R2      9411.977     21  18865.955    18866.445    18982.563
+410  TPM2u+I+R2    9411.347     22  18866.695    18867.232    18988.856
+420  TPM2u+F+I     9357.123     23  18760.247    18760.834    18887.960
+421  TPM2u+F+G4    9352.097     23  18750.194    18750.781    18877.907
+422  TPM2u+F+I+G4  9348.784     24  18745.568    18746.206    18878.835
+423  TPM2u+F+R2    9349.625     24  18747.250    18747.888    18880.516
+432  TPM2u+F+I+R2  9348.756     25  18747.513    18748.204    18886.332
+442  TPM3+I        9413.752     20  18867.503    18867.949    18978.559
+443  TPM3+G4       9406.668     20  18853.335    18853.781    18964.390
+444  TPM3+I+G4     9404.782     21  18851.565    18852.055    18968.173
+445  TPM3+R2       9405.889     21  18853.779    18854.269    18970.387
+454  TPM3+I+R2     9404.977     22  18853.954    18854.491    18976.115
+464  TPM3+I        9413.752     20  18867.503    18867.949    18978.559
+465  TPM3+G4       9406.668     20  18853.335    18853.781    18964.390
+466  TPM3+I+G4     9404.782     21  18851.565    18852.055    18968.173
+467  TPM3+R2       9405.889     21  18853.779    18854.269    18970.387
+476  TPM3+I+R2     9404.977     22  18853.954    18854.491    18976.115
+486  TPM3u+I       9413.760     20  18867.520    18867.966    18978.576
+487  TPM3u+G4      9406.689     20  18853.378    18853.824    18964.433
+488  TPM3u+I+G4    9404.752     21  18851.504    18851.995    18968.112
+489  TPM3u+R2      9405.891     21  18853.782    18854.273    18970.390
+498  TPM3u+I+R2    9404.959     22  18853.917    18854.455    18976.078
+508  TPM3u+F+I     9357.611     23  18761.223    18761.809    18888.936
+509  TPM3u+F+G4    9352.188     23  18750.376    18750.963    18878.090
+510  TPM3u+F+I+G4  9349.050     24  18746.100    18746.738    18879.367
+511  TPM3u+F+R2    9350.001     24  18748.003    18748.641    18881.269
+520  TPM3u+F+I+R2  9349.061     25  18748.122    18748.813    18886.941
+530  TIMe+I        9417.708     21  18877.416    18877.906    18994.024
+531  TIMe+G4       9411.354     21  18864.709    18865.199    18981.317
+532  TIMe+I+G4     9409.306     22  18862.612    18863.150    18984.773
+533  TIMe+R2       9409.870     22  18863.740    18864.277    18985.901
+542  TIMe+I+R2     9409.307     23  18864.614    18865.200    18992.327
+552  TIMe+I        9417.708     21  18877.416    18877.906    18994.024
+553  TIMe+G4       9411.354     21  18864.709    18865.199    18981.317
+554  TIMe+I+G4     9409.306     22  18862.612    18863.150    18984.773
+555  TIMe+R2       9409.870     22  18863.740    18864.277    18985.901
+564  TIMe+I+R2     9409.307     23  18864.614    18865.200    18992.327
+574  TIM+I         9417.696     21  18877.391    18877.882    18993.999
+575  TIM+G4        9411.359     21  18864.719    18865.209    18981.327
+576  TIM+I+G4      9409.294     22  18862.589    18863.126    18984.749
+577  TIM+R2        9409.860     22  18863.720    18864.258    18985.881
+586  TIM+I+R2      9409.300     23  18864.600    18865.187    18992.314
+596  TIM+F+I       9355.570     24  18759.139    18759.777    18892.406
+597  TIM+F+G4      9348.575     24  18745.151    18745.789    18878.417
+598  TIM+F+I+G4    9346.149     25  18742.298    18742.990    18881.117
+599  TIM+F+R2      9346.768     25  18743.535    18744.227    18882.354
+608  TIM+F+I+R2    9346.064     26  18744.128    18744.875    18888.499
+618  TIM2e+I       9417.546     21  18877.091    18877.582    18993.699
+619  TIM2e+G4      9411.358     21  18864.716    18865.207    18981.324
+620  TIM2e+I+G4    9409.238     22  18862.477    18863.014    18984.637
+621  TIM2e+R2      9409.773     22  18863.546    18864.083    18985.707
+630  TIM2e+I+R2    9409.242     23  18864.483    18865.070    18992.197
+640  TIM2e+I       9417.546     21  18877.091    18877.582    18993.699
+641  TIM2e+G4      9411.358     21  18864.716    18865.207    18981.324
+642  TIM2e+I+G4    9409.238     22  18862.477    18863.014    18984.637
+643  TIM2e+R2      9409.773     22  18863.546    18864.083    18985.707
+652  TIM2e+I+R2    9409.242     23  18864.483    18865.070    18992.197
+662  TIM2+I        9417.547     21  18877.093    18877.584    18993.701
+663  TIM2+G4       9411.358     21  18864.716    18865.207    18981.324
+664  TIM2+I+G4     9409.227     22  18862.454    18862.991    18984.614
+665  TIM2+R2       9409.769     22  18863.539    18864.076    18985.700
+674  TIM2+I+R2     9409.236     23  18864.471    18865.058    18992.185
+684  TIM2+F+I      9355.063     24  18758.127    18758.764    18891.393
+685  TIM2+F+G4     9348.491     24  18744.982    18745.620    18878.248
+686  TIM2+F+I+G4   9345.891     25  18741.782    18742.473    18880.601
+687  TIM2+F+R2     9346.480     25  18742.960    18743.652    18881.779
+696  TIM2+F+I+R2   9345.781     26  18743.561    18744.309    18887.933
+706  TIM3e+I       9412.326     21  18866.653    18867.143    18983.261
+707  TIM3e+G4      9404.022     21  18850.045    18850.535    18966.653
+708  TIM3e+I+G4    9402.660     22  18849.320    18849.858    18971.481
+709  TIM3e+R2      9403.739     22  18851.478    18852.016    18973.639
+718  TIM3e+I+R2    9402.869     23  18851.739    18852.325    18979.452
+728  TIM3e+I       9412.326     21  18866.653    18867.143    18983.261
+729  TIM3e+G4      9404.022     21  18850.045    18850.535    18966.653
+730  TIM3e+I+G4    9402.660     22  18849.320    18849.858    18971.481
+731  TIM3e+R2      9403.739     22  18851.478    18852.016    18973.639
+740  TIM3e+I+R2    9402.869     23  18851.739    18852.325    18979.452
+750  TIM3+I        9412.331     21  18866.662    18867.152    18983.270
+751  TIM3+G4       9404.002     21  18850.004    18850.494    18966.612
+752  TIM3+I+G4     9402.620     22  18849.240    18849.777    18971.400
+753  TIM3+R2       9403.729     22  18851.459    18851.996    18973.620
+762  TIM3+I+R2     9402.846     23  18851.692    18852.278    18979.405
+772  TIM3+F+I      9355.498     24  18758.996    18759.634    18892.262
+773  TIM3+F+G4     9348.602     24  18745.203    18745.841    18878.470
+774  TIM3+F+I+G4   9346.158     25  18742.315    18743.007    18881.134
+775  TIM3+F+R2     9346.837     25  18743.674    18744.365    18882.493
+784  TIM3+F+I+R2   9346.096     26  18744.192    18744.939    18888.564
+794  TVMe+I        9413.498     22  18870.997    18871.534    18993.158
+795  TVMe+G4       9406.626     22  18857.253    18857.790    18979.413
+796  TVMe+I+G4     9404.651     23  18855.302    18855.889    18983.015
+797  TVMe+R2       9405.794     23  18857.589    18858.175    18985.302
+806  TVMe+I+R2     9404.886     24  18857.771    18858.409    18991.037
+816  TVMe+I        9413.498     22  18870.997    18871.534    18993.158
+817  TVMe+G4       9406.626     22  18857.253    18857.790    18979.413
+818  TVMe+I+G4     9404.651     23  18855.302    18855.889    18983.015
+819  TVMe+R2       9405.794     23  18857.589    18858.175    18985.302
+828  TVMe+I+R2     9404.886     24  18857.771    18858.409    18991.037
+838  TVM+I         9413.509     22  18871.017    18871.555    18993.178
+839  TVM+G4        9406.583     22  18857.166    18857.703    18979.327
+840  TVM+I+G4      9404.631     23  18855.262    18855.849    18982.976
+841  TVM+R2        9405.793     23  18857.587    18858.173    18985.300
+850  TVM+I+R2      9404.874     24  18857.747    18858.385    18991.014
+860  TVM+F+I       9357.040     25  18764.080    18764.772    18902.899
+861  TVM+F+G4      9351.885     25  18753.771    18754.462    18892.590
+862  TVM+F+I+G4    9348.662     26  18749.325    18750.072    18893.696
+863  TVM+F+R2      9349.535     26  18751.070    18751.818    18895.442
+872  TVM+F+I+R2    9348.658     27  18751.317    18752.122    18901.241
+882  SYM+I         9412.115     23  18870.231    18870.817    18997.944
+883  SYM+G4        9403.928     23  18853.857    18854.444    18981.570
+884  SYM+I+G4      9402.521     24  18853.043    18853.681    18986.309
+885  SYM+R2        9403.622     24  18855.245    18855.883    18988.511
+894  SYM+I+R2      9402.722     25  18855.444    18856.135    18994.263
+904  SYM+I         9412.115     23  18870.231    18870.817    18997.944
+905  SYM+G4        9403.928     23  18853.857    18854.444    18981.570
+906  SYM+I+G4      9402.521     24  18853.043    18853.681    18986.309
+907  SYM+R2        9403.622     24  18855.245    18855.883    18988.511
+916  SYM+I+R2      9402.722     25  18855.444    18856.135    18994.263
+926  GTR+I         9412.110     23  18870.219    18870.806    18997.933
+927  GTR+G4        9403.920     23  18853.840    18854.427    18981.554
+928  GTR+I+G4      9402.496     24  18852.992    18853.630    18986.259
+929  GTR+R2        9403.622     24  18855.245    18855.883    18988.511
+938  GTR+I+R2      9402.705     25  18855.410    18856.102    18994.229
+948  GTR+F+I       9354.978     26  18761.956    18762.703    18906.328
+949  GTR+F+G4      9348.349     26  18748.697    18749.444    18893.069
+950  GTR+F+I+G4    9345.791     27  18745.582    18746.387    18895.507
+951  GTR+F+R2      9346.466     27  18746.933    18747.738    18896.858
+960  GTR+F+I+R2    9345.737     28  18747.474    18748.339    18902.951
+Akaike Information Criterion:           TN+F+I+G4
+Corrected Akaike Information Criterion: TN+F+I+G4
+Bayesian Information Criterion:         HKY+F+G4
+Best-fit model: HKY+F+G4 chosen according to BIC
+
+All model information printed to results_moss_new/07_phylogeny/Not_sex_linked/G6176.model.gz
+CPU time for ModelFinder: 31.755 seconds (0h:0m:31s)
+Wall-clock time for ModelFinder: 32.143 seconds (0h:0m:32s)
+Generating 1000 samples for ultrafast bootstrap (seed: 339846)...
+
+NOTE: 4 MB RAM (0 GB) is required!
+Estimate model parameters (epsilon = 0.100)
+1. Initial log-likelihood: -9352.601
+2. Current log-likelihood: -9352.308
+Optimal log-likelihood: -9352.277
+Rate parameters:  A-C: 1.00000  A-G: 3.88385  A-T: 1.00000  C-G: 1.00000  C-T: 3.88385  G-T: 1.00000
+Base frequencies:  A: 0.251  C: 0.196  G: 0.238  T: 0.315
+Gamma shape alpha: 0.965
+Parameters optimization took 2 rounds (0.007 sec)
+Wrote distance file to... 
+Computing ML distances based on estimated model parameters...
+Calculating distance matrix: done in 0.000402031 secs using 97.01% CPU
+Computing ML distances took 0.000442 sec (of wall-clock time) 0.000432 sec (of CPU time)
+Setting up auxiliary I and S matrices: done in 4.62569e-05 secs using 99.44% CPU
+Constructing RapidNJ tree: done in 3.09879e-05 secs using 100% CPU
+Computing RapidNJ tree took 0.000222 sec (of wall-clock time) 0.000247 sec (of CPU time)
+Log-likelihood of RapidNJ tree: -9376.846
+--------------------------------------------------------------------
+|             INITIALIZING CANDIDATE TREE SET                      |
+--------------------------------------------------------------------
+Generating 98 parsimony trees... 0.074 second
+Computing log-likelihood of 92 initial trees ... 0.138 seconds
+Current best score: -9352.277
+
+Do NNI search on 20 best initial trees
+Optimizing NNI: done in 0.00562065 secs using 98.9% CPU
+Estimate model parameters (epsilon = 0.100)
+BETTER TREE FOUND at iteration 1: -9352.259
+Optimizing NNI: done in 0.0377369 secs using 70.06% CPU
+Optimizing NNI: done in 0.0161653 secs using 99.17% CPU
+Optimizing NNI: done in 0.0112934 secs using 98.81% CPU
+Optimizing NNI: done in 0.0112127 secs using 89.65% CPU
+Optimizing NNI: done in 0.0168863 secs using 99.1% CPU
+Optimizing NNI: done in 0.0162833 secs using 93.08% CPU
+Optimizing NNI: done in 0.0105205 secs using 99.2% CPU
+Optimizing NNI: done in 0.0112611 secs using 90.15% CPU
+Optimizing NNI: done in 0.021388 secs using 99.03% CPU
+Iteration 10 / LogL: -9352.341 / Time: 0h:0m:32s
+Optimizing NNI: done in 0.015084 secs using 98.81% CPU
+Optimizing NNI: done in 0.0494791 secs using 43% CPU
+Optimizing NNI: done in 0.0519802 secs using 40.08% CPU
+Optimizing NNI: done in 0.0504281 secs using 53.88% CPU
+Optimizing NNI: done in 0.0216681 secs using 99.19% CPU
+Optimizing NNI: done in 0.0174968 secs using 99.23% CPU
+Optimizing NNI: done in 0.0224009 secs using 99.31% CPU
+Optimizing NNI: done in 0.0164761 secs using 99.26% CPU
+Optimizing NNI: done in 0.016413 secs using 99.31% CPU
+Optimizing NNI: done in 0.0273424 secs using 99.28% CPU
+Iteration 20 / LogL: -9352.532 / Time: 0h:0m:32s
+Finish initializing candidate tree set (2)
+Current best tree score: -9352.259 / CPU time: 0.672
+Number of iterations: 20
+--------------------------------------------------------------------
+|               OPTIMIZING CANDIDATE TREE SET                      |
+--------------------------------------------------------------------
+Optimizing NNI: done in 0.0217489 secs using 98.93% CPU
+Optimizing NNI: done in 0.0122122 secs using 82.67% CPU
+UPDATE BEST LOG-LIKELIHOOD: -9352.257
+Optimizing NNI: done in 0.00846188 secs using 98.62% CPU
+UPDATE BEST LOG-LIKELIHOOD: -9352.257
+Optimizing NNI: done in 0.041204 secs using 50.88% CPU
+Optimizing NNI: done in 0.0448129 secs using 60.65% CPU
+Optimizing NNI: done in 0.0373376 secs using 70.07% CPU
+Optimizing NNI: done in 0.0221474 secs using 96.65% CPU
+Optimizing NNI: done in 0.0152734 secs using 98.68% CPU
+Optimizing NNI: done in 0.0190164 secs using 98.68% CPU
+Optimizing NNI: done in 0.0165018 secs using 98.63% CPU
+Iteration 30 / LogL: -9352.679 / Time: 0h:0m:33s (0h:0m:2s left)
+Optimizing NNI: done in 0.0103495 secs using 98.75% CPU
+Optimizing NNI: done in 0.0253625 secs using 98.86% CPU
+Optimizing NNI: done in 0.0257628 secs using 98.72% CPU
+Optimizing NNI: done in 0.00946969 secs using 98.75% CPU
+Optimizing NNI: done in 0.0325652 secs using 66.38% CPU
+Optimizing NNI: done in 0.0232184 secs using 42.77% CPU
+Optimizing NNI: done in 0.0289555 secs using 54.71% CPU
+Optimizing NNI: done in 0.0511652 secs using 41.06% CPU
+Optimizing NNI: done in 0.023064 secs using 43.24% CPU
+Optimizing NNI: done in 0.0323962 secs using 65.43% CPU
+Iteration 40 / LogL: -9362.072 / Time: 0h:0m:33s (0h:0m:2s left)
+Optimizing NNI: done in 0.0504477 secs using 50.04% CPU
+Optimizing NNI: done in 0.052297 secs using 49.87% CPU
+Optimizing NNI: done in 0.0532317 secs using 50.66% CPU
+Optimizing NNI: done in 0.0503528 secs using 49.93% CPU
+Optimizing NNI: done in 0.0528302 secs using 48.43% CPU
+Optimizing NNI: done in 0.0209838 secs using 98.79% CPU
+Optimizing NNI: done in 0.0468913 secs using 44.12% CPU
+Optimizing NNI: done in 0.0202024 secs using 94.18% CPU
+Optimizing NNI: done in 0.0443038 secs using 67.74% CPU
+Optimizing NNI: done in 0.00986564 secs using 99% CPU
+Iteration 50 / LogL: -9363.379 / Time: 0h:0m:33s (0h:0m:1s left)
+Log-likelihood cutoff on original alignment: -9375.030
+Optimizing NNI: done in 0.0335263 secs using 60.49% CPU
+Optimizing NNI: done in 0.0206125 secs using 99.17% CPU
+Optimizing NNI: done in 0.0106163 secs using 99.08% CPU
+Optimizing NNI: done in 0.0267014 secs using 99.16% CPU
+Optimizing NNI: done in 0.00867842 secs using 98.7% CPU
+Optimizing NNI: done in 0.0153631 secs using 99.05% CPU
+Optimizing NNI: done in 0.0350812 secs using 62.12% CPU
+Optimizing NNI: done in 0.0158947 secs using 92.85% CPU
+Optimizing NNI: done in 0.0204402 secs using 99.09% CPU
+Optimizing NNI: done in 0.0156599 secs using 92.86% CPU
+Iteration 60 / LogL: -9352.569 / Time: 0h:0m:34s (0h:0m:1s left)
+Optimizing NNI: done in 0.0159189 secs using 86.72% CPU
+Optimizing NNI: done in 0.051277 secs using 58.46% CPU
+Optimizing NNI: done in 0.028448 secs using 50.36% CPU
+Optimizing NNI: done in 0.0274663 secs using 52.14% CPU
+Optimizing NNI: done in 0.0295212 secs using 52.11% CPU
+Optimizing NNI: done in 0.0243272 secs using 99.25% CPU
+Optimizing NNI: done in 0.0202155 secs using 94.39% CPU
+Optimizing NNI: done in 0.0096018 secs using 99.24% CPU
+Optimizing NNI: done in 0.0190925 secs using 99.31% CPU
+Optimizing NNI: done in 0.0428503 secs using 71.35% CPU
+Iteration 70 / LogL: -9352.325 / Time: 0h:0m:34s (0h:0m:1s left)
+Optimizing NNI: done in 0.0250873 secs using 99.26% CPU
+Optimizing NNI: done in 0.00836225 secs using 99.35% CPU
+Optimizing NNI: done in 0.0162312 secs using 99.22% CPU
+Optimizing NNI: done in 0.0197563 secs using 99.04% CPU
+Optimizing NNI: done in 0.0144205 secs using 99.07% CPU
+Optimizing NNI: done in 0.0209404 secs using 94.26% CPU
+Optimizing NNI: done in 0.0210157 secs using 94.33% CPU
+Optimizing NNI: done in 0.0216253 secs using 99.13% CPU
+Optimizing NNI: done in 0.0142795 secs using 99.23% CPU
+Optimizing NNI: done in 0.0202441 secs using 98.77% CPU
+Iteration 80 / LogL: -9352.509 / Time: 0h:0m:34s (0h:0m:0s left)
+Optimizing NNI: done in 0.0295016 secs using 98.83% CPU
+Optimizing NNI: done in 0.0189692 secs using 98.67% CPU
+Optimizing NNI: done in 0.0212574 secs using 98.76% CPU
+Optimizing NNI: done in 0.0193766 secs using 98.93% CPU
+Optimizing NNI: done in 0.0303839 secs using 98.92% CPU
+Optimizing NNI: done in 0.0357625 secs using 99.01% CPU
+Optimizing NNI: done in 0.0314132 secs using 99.07% CPU
+Optimizing NNI: done in 0.0191572 secs using 99.17% CPU
+Optimizing NNI: done in 0.0260889 secs using 99.02% CPU
+Optimizing NNI: done in 0.0261273 secs using 99.18% CPU
+Iteration 90 / LogL: -9352.454 / Time: 0h:0m:34s (0h:0m:0s left)
+Optimizing NNI: done in 0.00991844 secs using 99.17% CPU
+Optimizing NNI: done in 0.0210313 secs using 98.99% CPU
+Optimizing NNI: done in 0.0262114 secs using 99.12% CPU
+Optimizing NNI: done in 0.0210878 secs using 94.54% CPU
+Optimizing NNI: done in 0.0201229 secs using 99.31% CPU
+Optimizing NNI: done in 0.036694 secs using 99.24% CPU
+Optimizing NNI: done in 0.0230629 secs using 99.25% CPU
+Optimizing NNI: done in 0.0311565 secs using 99.15% CPU
+Optimizing NNI: done in 0.0209067 secs using 99.15% CPU
+Optimizing NNI: done in 0.0205919 secs using 94.43% CPU
+Iteration 100 / LogL: -9352.388 / Time: 0h:0m:35s (0h:0m:0s left)
+Log-likelihood cutoff on original alignment: -9375.030
+NOTE: Bootstrap correlation coefficient of split occurrence frequencies: 1.000
+Optimizing NNI: done in 0.00812846 secs using 99.27% CPU
+Optimizing NNI: done in 0.0212447 secs using 99.2% CPU
+TREE SEARCH COMPLETED AFTER 102 ITERATIONS / Time: 0h:0m:35s
+
+--------------------------------------------------------------------
+|                    FINALIZING TREE SEARCH                        |
+--------------------------------------------------------------------
+Performs final model parameters optimization
+Estimate model parameters (epsilon = 0.010)
+1. Initial log-likelihood: -9352.257
+Optimal log-likelihood: -9352.256
+Rate parameters:  A-C: 1.00000  A-G: 3.88442  A-T: 1.00000  C-G: 1.00000  C-T: 3.88442  G-T: 1.00000
+Base frequencies:  A: 0.251  C: 0.196  G: 0.238  T: 0.315
+Gamma shape alpha: 0.963
+Parameters optimization took 1 rounds (0.003 sec)
+BEST SCORE FOUND : -9352.256
+Creating bootstrap support values...
+Split supports printed to NEXUS file results_moss_new/07_phylogeny/Not_sex_linked/G6176.splits.nex
+Total tree length: 2.440
+
+Total number of iterations: 102
+CPU time used for tree search: 2.306 sec (0h:0m:2s)
+Wall-clock time used for tree search: 2.945 sec (0h:0m:2s)
+Total CPU time used: 34.123 sec (0h:0m:34s)
+Total wall-clock time used: 35.177 sec (0h:0m:35s)
+
+Computing bootstrap consensus tree...
+Reading input file results_moss_new/07_phylogeny/Not_sex_linked/G6176.splits.nex...
+10 taxa and 33 splits.
+Consensus tree written to results_moss_new/07_phylogeny/Not_sex_linked/G6176.contree
+Reading input trees file results_moss_new/07_phylogeny/Not_sex_linked/G6176.contree
+Log-likelihood of consensus tree: -9352.256
+
+Analysis results written to: 
+  IQ-TREE report:                results_moss_new/07_phylogeny/Not_sex_linked/G6176.iqtree
+  Maximum-likelihood tree:       results_moss_new/07_phylogeny/Not_sex_linked/G6176.treefile
+  Likelihood distances:          results_moss_new/07_phylogeny/Not_sex_linked/G6176.mldist
+
+Ultrafast bootstrap approximation results written to:
+  Split support values:          results_moss_new/07_phylogeny/Not_sex_linked/G6176.splits.nex
+  Consensus tree:                results_moss_new/07_phylogeny/Not_sex_linked/G6176.contree
+  Screen log file:               results_moss_new/07_phylogeny/Not_sex_linked/G6176.log
+
+Date and Time: Thu Jun 11 22:29:22 2026
