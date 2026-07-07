@@ -2,12 +2,13 @@
 # BLAST goflag probes against each sample's genome and devide the results into "Best" and "All" hits
 
 RESULTS_DIR = config["paths"]["results"]    # path for output files (result directory)
+SAMPLES_PATH = config["paths"]["samples_tsv"]
 
 # 1. Call Python script to generate order-specific probes
 rule prepare_order_probes:
     input:
         probe_dir = "resources/query_sets", 
-        samples_tsv = "config/samples.tsv"
+        samples_tsv = f"{SAMPLES_PATH}",
     output:
         #specific_probes = temp("resources/probes_by_sample/{sample_id}_specific_probes.fasta")     
         specific_probes = "resources/probes_by_sample/{sample_id}_specific_probes.fasta"
@@ -58,7 +59,10 @@ rule partition_blast_results:
         best_tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/B_Best_hits.tsv",
         all_tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/A_All_hits.tsv"
     params:
-        overlap_threshold = config["params"].get("overlap_threshold", 0.5)
+        overlap_threshold = config["params"].get("overlap_threshold", 0.5),
+        min_pident = config["params"].get("min_pident", 70.0),
+        min_bitscore_ratio = config["params"].get("min_bitscore_ratio", 0.85),
+        max_dist = config["params"].get("max_dist", 100000)
     log: f"logs/3-3/All_or_Best_partition_{{sample_id}}.log"
     shell:
         """
@@ -68,5 +72,8 @@ rule partition_blast_results:
             --out_best {output.best_tsv} \
             --out_all {output.all_tsv} \
             --overlap_threshold {params.overlap_threshold} \
+            --min_pident {params.min_pident} \
+            --min_bitscore_ratio {params.min_bitscore_ratio} \
+            --max_dist {params.max_dist} \
             > {log} 2>&1
         """

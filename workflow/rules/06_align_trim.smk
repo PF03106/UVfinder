@@ -42,8 +42,8 @@ rule mafft_alignment:
             if [ -f "{params.ref_path}" ]; then
                 echo "Reference found: {params.ref_path}" > {log}
                 # Add to Reference (--add)
-                mafft {params.mafft_opts} --add {input.merged_fasta} \
-                      --reorder {params.ref_path} > {output.aln_ref} 2>> {log}
+                mafft {params.mafft_opts} --thread {threads} --reorder \
+                      --add {input.merged_fasta} {params.ref_path} > {output.aln_ref} 2>> {log}
             else
                 echo "No reference found. Running de novo." >> {log}
                 mafft {params.mafft_opts} \

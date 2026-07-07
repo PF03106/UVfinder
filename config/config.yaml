@@ -2,34 +2,35 @@
 # UVfinder Pipeline Configuration
 # ---------------------------------------------------------
 # Analysis target settings
-target_order: "Hypnales"      # Target order for analysis (e.g., "Hypnales", "All")
-outgroup: "S0005"             # Outgroup sample ID (e.g., "S0005" as outgroup for Hypnales)
+#target_order: "Dicranales,Ditrichales,Pottiales,Grimmiales,Bryoxiphiales"      # Target order for analysis (e.g., "All", "Hypnales", or "Hypnales, Pottiales, Dicriales"(List of orders))
+target_order: "All"
+outgroup: ""             # Outgroup sample ID (e.g., "S0005" as outgroup for Hypnales) This will add this species, and you'll be running target_order + outgroup species as input.
 
 # parameters settings
 params:
   uv_blast_evalue: 1e-11      # E-value for UV marker BLAST searches
   query_blast_evalue: 1e-10   # E-value for Goflag query BLAST searches
-  min_bitscore_ratio_UV: 0.8  # Minimum bitscore ratio for UV marker hits compared to the best hit (e.g., 0.8)
+  min_bitscore_ratio_UV: 0.85 # Minimum bitscore ratio for UV marker hits compared to the best hit (e.g., 0.8)
   min_pident: 70.0            # minimum percent identity to keep a hit (e.g., 0.7)(GoFlag)
-  min_bitscore_ratio: 0.8     # minimum bitscore ratio compared to the best hit of the same locus (e.g., 0.8)(Goflag)
+  min_bitscore_ratio: 0.85     # minimum bitscore ratio compared to the best hit of the same locus (e.g., 0.8)(Goflag)
+  max_dist: 100000
   overlap_threshold: 0.5      # threshold for determining overlapping BLAST hits (0.0 to 1.0, representing the proportion of overlap relative to the shorter hit)  
-  flanking_bp: 20             # BLAST hit flanking sequence length (bp)
+  flanking_bp: 1000           # BLAST hit flanking sequence length (bp)
   max_blast_hits: 10          # maximum number of BLAST hits to retain per sample per marker in A_all.tsv
   mafft: 
     min_taxa: 4              # minimum number of taxa required for MSA (including reference)
-    alignment_option: "--auto --adjustdirection --thread 4" # MAFFT alignment options
+    alignment_option: "--genafpair --maxiterate 1000 --adjustdirection" # MAFFT alignment options
   trimal: "-automated1"     # trimAl automatic mode
   iqtree:
-    model: "TEST"            # optimal model test and tree generation (ModelFinder Plus)
-    threads: 4              # number of threads for IQ-TREE
+    model: "MFP"            # optimal model test and tree generation
     bootstrap: 1000         # Ultrafast Bootstrap iterations
 
-# file paths
+# file paths (CHANGE IF NECESSARY)
 paths:
-  samples_tsv: "config/samples.tsv"
+  samples_tsv: "config/liverwort_samples.tsv"
   genomes: "resources/genomes"      # User's genome assemblies in FASTA format (User input)
-  female_markers: "resources/sex_markers/female_sex_markers.fasta"
-  male_markers: "resources/sex_markers/male_sex_markers.fasta"
+  female_markers: "resources/sex_markers/liverwort_female_sex_markers.fasta"
+  male_markers: "resources/sex_markers/liverwort_male_sex_markers.fasta"
   query_sets: "resources/query_sets"  # GoFlag query sets (Betchetler et al., 2023; https://doi.org/10.5061/dryad.3j9kd51qm))
   ref_alignment_dir: "resources/genesNT_alignments"
-  results: "results"  # Users can change this path if they want to store results in a different location
+  results: "results_liverwort"  # Users can change this path if they want to store results in a different location

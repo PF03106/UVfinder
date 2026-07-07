@@ -15,7 +15,7 @@ library(data.table)
 genome_base <- "/blue/mcdaniel/seyeonkim/UVfinder/results/00_renamed"
 blast_base <- "/blue/mcdaniel/seyeonkim/UVfinder/results/03_locus_search"
 meta_file <- "/blue/mcdaniel/seyeonkim/UVfinder/config/samples.tsv"
-out_dir <- "/blue/mcdaniel/seyeonkim/UVfinder/results/Hypanales_chromomap" 
+out_dir <- "/blue/mcdaniel/seyeonkim/UVfinder/results/hypnales_Dups_chromomap" 
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # -------------------------------
@@ -83,9 +83,41 @@ for (sample in target_samples) {
     next
   }
   
+  # Load the entire genome first
   ref <- readDNAStringSet(ref_fa)
-  chrlen_map <- setNames(width(ref), names(ref))
+  all_seq_names <- names(ref)
+
+  # Load BLAST results
+  blast_dir <- file.path(blast_base, sample)
+  target_file_name <- ifelse(opt$blast_type == "all_hits", "A_All_hits.tsv", "B_Best_hits.tsv")
+  blast_file <- file.path(blast_dir, target_file_name)
+
+  if (file.exists(blast_file)) {
+    dt <- fread(blast_file, header=TRUE, col.names = std_cols, sep="\t", fill=TRUE)
+  } else {
+    dt <- data.table()
+  }
+
+  # --- Filtering Logic ---
+  # 1. Identify sequence names ending in 'Chr[0-9UV]+'
+  chr_names <- all_seq_names[grepl("Chr[0-9UV]+$", all_seq_names)]
   
+  # 2. Identify sequence names that have at least one BLAST hit
+  hit_seq_names <- unique(dt$sseqid)
+  
+  # 3. Final selection: All Chr + Scaffolds with hits (that exist in ref)
+  target_seq_names <- unique(c(chr_names, intersect(all_seq_names, hit_seq_names)))
+  
+  if (length(target_seq_names) == 0) {
+    message("⚠️ [SKIP] No Chr or Scaffolds with hits found for: ", sample)
+    next
+  }
+
+  # Filter reference to include only target sequences
+  ref_filtered <- ref[target_seq_names]
+  chrlen_map <- setNames(width(ref_filtered), names(ref_filtered))
+  
+  # Create chrom_file
   chrom_file <- file.path(out_dir, paste0(sample, "_chrom.txt"))
   data.frame(
     chrom = names(chrlen_map),
@@ -93,62 +125,48 @@ for (sample in target_samples) {
     end = as.integer(chrlen_map)
   ) %>% write_tsv(chrom_file, col_names = FALSE)
 
-  blast_dir <- file.path(blast_base, sample)
-  target_file_name <- ifelse(opt$blast_type == "all_hits", "A_All_hits.tsv", "B_Best_hits.tsv")
-  blast_file <- file.path(blast_dir, target_file_name)
-
-  dt <- fread(blast_file, header=TRUE, col.names = std_cols, sep="\t", fill=TRUE)
-  if (nrow(dt) == 0) {
-    warning("BLAST result is empty -> skipping.")
-    next
-  } else {
+  # Prepare annotation data
+  if (nrow(dt) > 0) {
     all_hits <- dt %>% mutate(
       start = pmin(sstart, send),
       end   = pmax(sstart, send),
       probe = qseqid
     )
-  }
-  
-  # -------------------------------
-  # 5. Prepare annotation file (Modified with Dummy Lock Hack)
-  # -------------------------------
-  annot_df <- all_hits %>% 
-    arrange(sseqid, start, end) %>%
-    mutate(CleanProbe = trimws(sub("\\|.*", "", probe))) %>% 
-    left_join(gene_info, by = c("CleanProbe" = "Gene")) %>%
-    transmute(
-      ElementName    = probe,
-      ChromosomeName = sseqid,
-      Start          = as.integer(start),
-      End            = as.integer(end),
-      Category       = ifelse(!is.na(Count), 
-                              sprintf("Shared_%02d", as.integer(Count)), 
-                              "Z_Other")
-    ) %>% 
-    filter(ChromosomeName %in% names(chrlen_map))
-
-  if(nrow(annot_df) == 0) {
-    warning("No annotations left -> skipping.")
-    next
+    
+    annot_df <- all_hits %>% 
+      filter(sseqid %in% target_seq_names) %>%
+      arrange(sseqid, start, end) %>%
+      mutate(CleanProbe = trimws(sub("\\|.*", "", probe))) %>% 
+      left_join(gene_info, by = c("CleanProbe" = "Gene")) %>%
+      transmute(
+        ElementName    = probe,
+        ChromosomeName = sseqid,
+        Start          = as.integer(start),
+        End            = as.integer(end),
+        Category       = ifelse(!is.na(Count), 
+                                sprintf("Shared_%02d", as.integer(Count)), 
+                                "Z_Other")
+      )
+  } else {
+    annot_df <- data.frame(ElementName=character(), ChromosomeName=character(), 
+                           Start=integer(), End=integer(), Category=character())
   }
 
   # -------------------------------
-  # [Core Fix] Insert hidden dummy data to prevent chromoMap color shifting
+  # Insert hidden dummy data to prevent chromoMap color shifting
   # -------------------------------
-  # Create a fully defined color map
   color_map <- c(
     "Shared_01" = "#FFD166",
     "Shared_02" = "#B4CE84",
     "Shared_03" = "#48CAE4",
     "Shared_04" = "#0096C7",
     "Shared_11" = "#023E8A",
-    "Z_Other"   = "#BDBDBD"
+    "Z_Other"   = "#BDBDBD" 
   )
   
-  # Failsafe 1: Ensure color map is strictly alphabetically sorted
   color_map <- color_map[order(names(color_map))]
 
-  # Failsafe 2: Create invisible 1bp dummy categories at the start of the 1st chromosome
+  # Dummy data on the first selected sequence (usually a Chr)
   dummy_df <- data.frame(
     ElementName    = paste0("dummy_", names(color_map)),
     ChromosomeName = names(chrlen_map)[1],  
@@ -158,16 +176,10 @@ for (sample in target_samples) {
     stringsAsFactors = FALSE
   )
 
-  # Place dummy data at the very top of the actual dataset
-  annot_df <- bind_rows(dummy_df, annot_df)
-
+  final_annot_df <- bind_rows(dummy_df, annot_df)
   annot_file <- file.path(out_dir, paste0(sample, "_annotation.txt"))
-  write_tsv(annot_df, annot_file, col_names = FALSE)
+  write_tsv(final_annot_df, annot_file, col_names = FALSE)
   
-  # -------------------------------
-  # 6. Set Colors based on Count Category
-  # -------------------------------
-  # Pass the fixed, ordered 6 colors directly.
   sample_colors <- unname(color_map)
 
   # -------------------------------
@@ -186,7 +198,7 @@ for (sample in target_samples) {
     chr_color   = "#f0f0f0",  
     ploidy      = 1,
     canvas_width  = 1400,
-    canvas_height = 700,
+    canvas_height = 800, # Increased height slightly for more bars
     title = title, 
     export.options = list(
       format = "svg",

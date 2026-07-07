@@ -14,7 +14,7 @@ library(data.table)
 genome_base <- "/blue/mcdaniel/seyeonkim/UVfinder/results/00_renamed"
 blast_base <- "/blue/mcdaniel/seyeonkim/UVfinder/results/03_locus_search"
 meta_file <- "/blue/mcdaniel/seyeonkim/UVfinder/config/samples.tsv"
-out_dir <- "/blue/mcdaniel/seyeonkim/UVfinder/results/Hypanales_chromomap"  #CHANGE THIS PATH TO YOUR DESIRED OUTPUT DIRECTORY
+out_dir <- "/blue/mcdaniel/seyeonkim/UVfinder/results/hypnales_chromomap_S0021" 
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # -------------------------------
@@ -84,25 +84,26 @@ for (sample in target_samples) {
     next
   }
   
-  # create chrlen_map and chrom_file.
+  # ==============================================================
+  # [수정] 필터링하기 전에 유전체 파일과 BLAST 결과를 먼저 불러옵니다.
+  # ==============================================================
+  # 1. FASTA 파일 로드 및 시퀀스 이름 추출
   ref <- readDNAStringSet(ref_fa)
-  chrlen_map <- setNames(width(ref), names(ref))
-  
-  chrom_file <- file.path(out_dir, paste0(sample, "_chrom.txt"))
-  data.frame(
-    chrom = names(chrlen_map),
-    start = 1,
-    end = as.integer(chrlen_map)
-  ) %>% write_tsv(chrom_file, col_names = FALSE)
+  all_seq_names <- names(ref)
 
+  # 2. BLAST 결과 파일 로드
   blast_dir <- file.path(blast_base, sample)
-
   target_file_name <- ifelse(opt$blast_type == "all_hits", 
-                           "A_All_hits.tsv", 
-                           "B_Best_hits.tsv")
+                             "A_All_hits.tsv", 
+                             "B_Best_hits.tsv")
   blast_file <- file.path(blast_dir, target_file_name)
 
-  dt <- fread(blast_file, header=TRUE, col.names = std_cols, sep="\t", fill=TRUE)
+  if (file.exists(blast_file)) {
+    dt <- fread(blast_file, header=TRUE, col.names = std_cols, sep="\t", fill=TRUE)
+  } else {
+    dt <- data.table()
+  }
+
   if (nrow(dt) == 0) {
     warning("BLAST result is empty for sample: ", sample, " -> skipping sample.")
     next
@@ -114,7 +115,35 @@ for (sample in target_samples) {
       probe = qseqid
     )
   }
+
+  # --- Filtering Logic ---
+  # 이제 all_seq_names와 dt가 존재하므로 정상 작동합니다.
   
+  # 1. Identify sequence names ending in 'Chr[0-9UV]+'
+  chr_names <- all_seq_names[grepl("Chr[0-9UV]+$", all_seq_names)]
+  
+  # 2. Identify sequence names that have at least one BLAST hit
+  hit_seq_names <- unique(dt$sseqid)
+  
+  # 3. Final selection: All Chr + Scaffolds with hits (that exist in ref)
+  target_seq_names <- unique(c(chr_names, intersect(all_seq_names, hit_seq_names)))
+  
+  if (length(target_seq_names) == 0) {
+    message("⚠️ [SKIP] No Chr or Scaffolds with hits found for: ", sample)
+    next
+  }
+
+  # Filter reference to include only target sequences
+  ref_filtered <- ref[target_seq_names]
+  chrlen_map <- setNames(width(ref_filtered), names(ref_filtered))
+
+  chrom_file <- file.path(out_dir, paste0(sample, "_chrom.txt"))
+  data.frame(
+    chrom = names(chrlen_map),
+    start = 1,
+    end = as.integer(chrlen_map)
+  ) %>% write_tsv(chrom_file, col_names = FALSE)
+
   # -------------------------------
   # 5. Prepare annotation file for chromoMap (probe locations)
   # -------------------------------
@@ -125,7 +154,6 @@ for (sample in target_samples) {
       ChromosomeName = sseqid,
       Start          = as.integer(start),
       End            = as.integer(end),
-      # Safely extract and trim the probe name before checking against the gene list
       Category       = ifelse(trimws(sub("\\|.*", "", probe)) %in% sex_linked_genes, "1_Target", "2_Other")
     ) %>% 
     filter(ChromosomeName %in% names(chrlen_map))
@@ -135,18 +163,29 @@ for (sample in target_samples) {
     next
   }
 
-  annot_file <- file.path(out_dir, paste0(sample, "_annotation.txt"))
-  write_tsv(annot_df, annot_file, col_names = FALSE)
-  
-  # Dynamically assign colors based on strictly alphabetical present categories
-  # chromoMap assigns colors strictly by the alphabetical order of the categories!
-  present_categories <- unique(annot_df$Category)
-  
-  # Pre-define color palette
+  # ==============================================================
+  # [수정] 색상 꼬임 현상 방지 (더미 데이터 삽입)
+  # ==============================================================
+  # chromoMap은 데이터에 존재하는 카테고리의 '알파벳 순서대로' 색상을 부여합니다.
+  # 특정 샘플에 '1_Target'이 하나도 없을 경우 '2_Other'가 타겟 색상(핑크)으로 변하는 것을 막아줍니다.
   color_map <- c("1_Target" = "#FF0066", "2_Other" = "#0099CC")
   
-  # Extract correct colors for the categories actually present in this sample
-  sample_colors <- unname(color_map[present_categories])
+  dummy_df <- data.frame(
+    ElementName    = paste0("dummy_", names(color_map)),
+    ChromosomeName = names(chrlen_map)[1],
+    Start          = 1L,
+    End            = 1L,
+    Category       = names(color_map),
+    stringsAsFactors = FALSE
+  )
+  
+  final_annot_df <- bind_rows(dummy_df, annot_df)
+  
+  annot_file <- file.path(out_dir, paste0(sample, "_annotation.txt"))
+  write_tsv(final_annot_df, annot_file, col_names = FALSE)
+  
+  # 색상은 항상 고정된 순서로 적용됩니다.
+  sample_colors <- unname(color_map)
   
   # -------------------------------
   # 6. Visualize with chromoMap and save svg
@@ -162,7 +201,7 @@ for (sample in target_samples) {
     data_type = "categorical",
     data_colors = list(sample_colors),
     segment_ann = TRUE,
-    chr_color   = "#bdbdbd",
+    chr_color   = "#f0f0f0",
     ploidy      = 1,
     canvas_width  = 1400,
     canvas_height = 700,

@@ -14,7 +14,6 @@ rule iqtree_build:
         prefix = f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}",
         model = config["params"]["iqtree"]["model"],       
         bootstrap = config["params"]["iqtree"]["bootstrap"]
-    threads: config["params"]["iqtree"]["threads"]
     log: "logs/7-1/iqtree_{type}_{gene}.log"
     shell:
         """
@@ -23,8 +22,7 @@ rule iqtree_build:
                    --prefix {params.prefix} \
                    -m {params.model} \
                    -B {params.bootstrap} \
-                   -nt {threads} \
-                   -redo \
+                   -T AUTO \
                    > {log} 2>&1
         else
             echo "Empty alignment file. Skipping Tree building." > {log}

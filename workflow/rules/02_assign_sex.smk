@@ -2,6 +2,7 @@
 # tBLASTn sex marker genes against each sample's blast database and assign sex and sex chromosome number.
 
 RESULTS_DIR = config["paths"]["results"]    # path for output files (result directory)
+SAMPLES_PATH = config["paths"]["samples_tsv"]
 
 # BLAST for male markers
 rule blast_male:
@@ -45,7 +46,9 @@ rule assign_sex_differential:
     input:
         male_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_male.tblastn",
         female_res = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_female.tblastn",
-        metadata = "config/samples.tsv",
+        metadata = f"{SAMPLES_PATH}",
+        m_marker = config["paths"]["male_markers"], 
+        f_marker = config["paths"]["female_markers"],  
     output: out_file = f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv"
     params:
         min_bitscore_ratio_UV = config["params"]["min_bitscore_ratio_UV"]
@@ -58,6 +61,8 @@ rule assign_sex_differential:
             --samples_tsv {input.metadata} \
             --male_blast {input.male_res} \
             --female_blast {input.female_res} \
+            --male_marker {input.m_marker} \
+            --female_marker {input.f_marker} \
             --output {output.out_file} \
             --min_bitscore_ratio_UV {params.min_bitscore_ratio_UV} >> {log} 2>&1
         """
@@ -66,7 +71,7 @@ rule assign_sex_differential:
 rule aggregate_sex_id:
     input:
         results = expand(f"{RESULTS_DIR}/02_sex_id/{{sample_id}}_sex_assignment.tsv", sample_id=SAMPLES),
-        metadata = "config/samples.tsv"
+        metadata = f"{SAMPLES_PATH}",
     output:
         all_res = f"{RESULTS_DIR}/02_sex_id/all_samples_sex_assignment.tsv"
     log: f"logs/2-3/aggregate_sex_id.log"

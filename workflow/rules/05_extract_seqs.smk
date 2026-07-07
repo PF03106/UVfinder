@@ -57,18 +57,18 @@ rule extract_all_sequences:
         """
 
 # 3. Extract Autosomal Hits (Non-target, genes that are not in all_sex_linked_genes.txt)
-rule extract_not_sex_linked_sequences:
+rule extract_autosomal_sequences:
     input:
-        tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/B_Best_hits.tsv",
+        tsv = f"{RESULTS_DIR}/03_locus_search/{{sample_id}}/A_All_hits.tsv",  # CHANGE THIS TO "B_Best_hits" if you want to get result from B_Best_hits.
         genome = f"{RESULTS_DIR}/00_renamed/{{sample_id}}_renamed.fasta",
-        loci_list = f"{RESULTS_DIR}/04_filtered/not_sex_linked_genes.txt"
+        loci_list = f"{RESULTS_DIR}/04_filtered/autosomal_genes.txt"
     output:
-        out_dir = directory(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/Not_sex_linked")
+        out_dir = directory(f"{RESULTS_DIR}/05_extracted/{{sample_id}}/autosomal")
     params:
         sample = "{sample_id}",
         flank = config["params"]["flanking_bp"],
         max_hits = config["params"]["max_blast_hits"]
-    log: "logs/5_not_sex_linked/extract_not_sex_linked_{sample_id}.log"
+    log: "logs/5_autosomal/extract_autosomal_{sample_id}.log"
     shell:
         """
         python3 workflow/scripts/extract_sex_linked_with_flanks.py \
