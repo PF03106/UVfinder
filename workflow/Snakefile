@@ -2,9 +2,10 @@ import pandas as pd
 
 configfile: "config/config.yaml"
 RESULTS_DIR = config["paths"]["results"]
+SAMPLES_DIR = config["paths"]["samples_tsv"]
 
 # 1. read config/samples.tsv
-samples_df = pd.read_csv("config/samples.tsv", sep="\t").set_index("sample_id", drop=False)
+samples_df = pd.read_csv(SAMPLES_DIR, sep="\t").set_index("sample_id", drop=False)
 
 # 2. make sample_id list
 raw_target = config.get("target_order")
@@ -21,13 +22,15 @@ if TARGET_ORDER.lower() != "all":
     if OUTGROUP_ID not in samples_df["sample_id"].values:
         raise ValueError(f"\n[ERROR] The specified outgroup '{OUTGROUP_ID}' does not exist in the samples.tsv file!\n")
 
-    filtered_df = samples_df[(samples_df['order'].str.lower() == TARGET_ORDER.lower()) | 
+    target_list = [t.strip().lower() for t in TARGET_ORDER.split(",")]
+
+    filtered_df = samples_df[(samples_df['order'].str.lower().isin(target_list)) | 
                              (samples_df['sample_id'] == OUTGROUP_ID)]
     
     SAMPLES = filtered_df["sample_id"].tolist()
     
     if len(SAMPLES) <= 1:
-        raise ValueError(f"\n[ERROR] There are no samples for the target order: {TARGET_ORDER}\n")
+        raise ValueError(f"\n[ERROR] There are no samples for the target orders: {TARGET_ORDER}\n")
 
     print(f"\nTargeted Analysis Mode: {TARGET_ORDER} + Outgroup({OUTGROUP_ID})")
     print(f"Total samples selected: {len(SAMPLES)}\n")
@@ -47,22 +50,22 @@ def get_dynamic_targets(wildcards):
     
     # 2. Read file and create gene ID list
     sex_linked_file = checkpoint_output.out_list
-    not_sex_linked_file =checkpoint_output.out_not_sex_linked
+    autosomal_file =checkpoint_output.out_autosomal
 
     with open(sex_linked_file) as f:
         genes = [line.strip() for line in f if line.strip()]
-    with open(not_sex_linked_file) as f:
-        not_sex_linked_genes = [line.strip() for line in f if line.strip()]
+    with open(autosomal_file) as f:
+        autosomal_genes = [line.strip() for line in f if line.strip()]
         
     # 3. Return Trimmed Alignment file paths (Trees)
     trees_sex_linked = expand(f"{RESULTS_DIR}/07_phylogeny/{{type}}/{{gene}}.treefile", 
                    type=["Best", "All"], 
                    gene=genes)
-    trees_not_sex_linked = expand(f"{RESULTS_DIR}/07_phylogeny/Not_sex_linked/{{gene}}.treefile",
-                                  gene=not_sex_linked_genes)
+    trees_autosomal = expand(f"{RESULTS_DIR}/07_phylogeny/autosomal/{{gene}}.treefile",
+                                  gene=autosomal_genes)
 
     # Combine and return both target lists
-    return trees_sex_linked + trees_not_sex_linked
+    return trees_sex_linked + trees_autosomal
 
 # 4. Rule all
 rule all:
@@ -83,11 +86,13 @@ rule all:
         f"{RESULTS_DIR}/04_filtered/all_sex_linked_genes.txt",
         f"{RESULTS_DIR}/04_filtered/sex_linked_species_lists.tsv",
         f"{RESULTS_DIR}/04_filtered/sex_linked_summary_by_order.tsv",
-        f"{RESULTS_DIR}/04_filtered/not_sex_linked_genes.txt",
+        f"{RESULTS_DIR}/04_filtered/autosomal_genes.txt",
+        expand(f"{RESULTS_DIR}/04_filtered/dup_tagged_og/{{s}}_classified.tsv", s=SAMPLES),
+        f"{RESULTS_DIR}/04_filtered/all_samples_classified_duplications.tsv",
         # Phase 5: Extract sequences
         expand(f"{RESULTS_DIR}/05_extracted/{{s}}/Best", s=SAMPLES),
         expand(f"{RESULTS_DIR}/05_extracted/{{s}}/All", s=SAMPLES),
-        expand(f"{RESULTS_DIR}/05_extracted/{{s}}/Not_sex_linked", s=SAMPLES),
+        expand(f"{RESULTS_DIR}/05_extracted/{{s}}/autosomal", s=SAMPLES),
         # Phase 6 & 7: MSA, TrimAL, IQTree, and Viz (dynamic targets)
         get_dynamic_targets
 

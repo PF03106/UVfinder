@@ -1,3 +1,4 @@
+#Scatter plot of sex_linked species by order. Fig 2b
 # 0. Load necessary libraries
 if (!require("ggplot2")) install.packages("ggplot2")
 if (!require("dplyr")) install.packages("dplyr")
@@ -10,7 +11,7 @@ library(tidyr)
 library(ggrepel)
 
 # 1. Set directory and file path
-Results_dir <- "results/04_filtered"
+Results_dir <- "results_moss_new/04_filtered"
 input_file_name <- "sex_linked_species_lists.tsv"
 file_path <- file.path(Results_dir, input_file_name)
 
